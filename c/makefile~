@@ -1,0 +1,11 @@
+.PHONY: clean
+
+clean:
+	rm -f src/obj/*.o
+	rm -f bin/*
+
+model:
+	make -f makefile.model
+
+calibrate:
+	make -f makefile.calibrate
