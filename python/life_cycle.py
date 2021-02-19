@@ -183,18 +183,60 @@ sreg_x_b = ols(formula=f2,data=df2[df2.grp==1]).fit(cov_type='HC0')
 sreg_x = ols(formula=f2,data=df2).fit(cov_type='HC0')
 
 caldata = np.genfromtxt(outpath + "calibration_data.txt",delimiter=" ")
-caldata2 = np.zeros((3,3))
-caldata2[0][0] = dreg_v_a.params['C(tenure)[T.5.0]']
-caldata2[0][1] = dreg_v_b.params['C(tenure)[T.5.0]']
-caldata2[0][2] = dreg_x.params['C(tenure)[T.5.0]']
-caldata2[1][0] = sreg_v_a.params['C(tenure)[T.5]']
-caldata2[1][1] = sreg_v_b.params['C(tenure)[T.5]']
-caldata2[1][2] = sreg_x.params['C(tenure)[T.5]']
-caldata2[2][0] = dreg_v_a.bse['C(tenure)[T.5.0]']
-caldata2[2][1] = dreg_v_b.bse['C(tenure)[T.5.0]']
-caldata2[2][2] = dreg_x.bse['C(tenure)[T.5.0]']
-caldata3 = np.hstack((caldata,caldata2))
-np.savetxt(outpath + "calibration_data.txt",caldata3,delimiter=" ")
+assert (caldata.shape == (3,10)), 'Error! Calibration data file wrong size! Run sumstats first!'
+    
+caldata2 = np.zeros((3,10+40))
+
+caldata2[0][0] = dreg_x_a.params['C(tenure)[T.1.0]']
+caldata2[0][1] = dreg_x_a.params['C(tenure)[T.2.0]']
+caldata2[0][2] = dreg_x_a.params['C(tenure)[T.3.0]']
+caldata2[0][3] = dreg_x_a.params['C(tenure)[T.4.0]']
+caldata2[0][4] = dreg_x_a.params['C(tenure)[T.5.0]']
+
+caldata2[0][5] = dreg_x_b.params['C(tenure)[T.1.0]']
+caldata2[0][6] = dreg_x_b.params['C(tenure)[T.2.0]']
+caldata2[0][7] = dreg_x_b.params['C(tenure)[T.3.0]']
+caldata2[0][8] = dreg_x_b.params['C(tenure)[T.4.0]']
+caldata2[0][9] = dreg_x_b.params['C(tenure)[T.5.0]']
+
+
+caldata2[2][0] = dreg_x_a.bse['C(tenure)[T.1.0]']
+caldata2[2][1] = dreg_x_a.bse['C(tenure)[T.2.0]']
+caldata2[2][2] = dreg_x_a.bse['C(tenure)[T.3.0]']
+caldata2[2][3] = dreg_x_a.bse['C(tenure)[T.4.0]']
+caldata2[2][4] = dreg_x_a.bse['C(tenure)[T.5.0]']
+
+caldata2[2][5] = dreg_x_b.bse['C(tenure)[T.1.0]']
+caldata2[2][6] = dreg_x_b.bse['C(tenure)[T.2.0]']
+caldata2[2][7] = dreg_x_b.bse['C(tenure)[T.3.0]']
+caldata2[2][8] = dreg_x_b.bse['C(tenure)[T.4.0]']
+caldata2[2][9] = dreg_x_b.bse['C(tenure)[T.5.0]']
+
+caldata2[1][0] = sreg_x_a.params['C(tenure)[T.1]']
+caldata2[1][1] = sreg_x_a.params['C(tenure)[T.2]']
+caldata2[1][2] = sreg_x_a.params['C(tenure)[T.3]']
+caldata2[1][3] = sreg_x_a.params['C(tenure)[T.4]']
+caldata2[1][4] = sreg_x_a.params['C(tenure)[T.5]']
+
+caldata2[1][5] = sreg_x_b.params['C(tenure)[T.1]']
+caldata2[1][6] = sreg_x_b.params['C(tenure)[T.2]']
+caldata2[1][7] = sreg_x_b.params['C(tenure)[T.3]']
+caldata2[1][8] = sreg_x_b.params['C(tenure)[T.4]']
+caldata2[1][9] = sreg_x_b.params['C(tenure)[T.5]']
+
+#caldata2[0][1] = dreg_v_b.params['C(tenure)[T.5.0]']
+#caldata2[0][2] = dreg_x.params['C(tenure)[T.5.0]']
+
+
+#caldata2[1][0] = sreg_v_a.params['C(tenure)[T.5]']
+#caldata2[1][1] = sreg_v_b.params['C(tenure)[T.5]']
+#caldata2[1][2] = sreg_x.params['C(tenure)[T.5]']
+#caldata2[2][0] = dreg_v_a.bse['C(tenure)[T.5.0]']
+#caldata2[2][1] = dreg_v_b.bse['C(tenure)[T.5.0]']
+#caldata2[2][2] = dreg_x.bse['C(tenure)[T.5.0]']
+
+#caldata3 = np.hstack((caldata,caldata2))
+#np.savetxt(outpath + "calibration_data.txt",caldata3,delimiter=" ")
 
 #############################################################################
         
@@ -572,11 +614,13 @@ deffect_a = np.zeros((max_tenure_scalar+1,max_tenure_scalar+1))
 deffect_b = np.zeros((max_tenure_scalar+1,max_tenure_scalar+1))
 derr_a = np.zeros((max_tenure_scalar+1,max_tenure_scalar+1))
 derr_b = np.zeros((max_tenure_scalar+1,max_tenure_scalar+1))
-
+dse_a = np.zeros((max_tenure_scalar+1,max_tenure_scalar+1))
+dse_b = np.zeros((max_tenure_scalar+1,max_tenure_scalar+1))
 seffect_a = np.zeros((max_tenure_scalar+1,max_tenure_scalar+1))
 seffect_b = np.zeros((max_tenure_scalar+1,max_tenure_scalar+1))
 serr_a = np.zeros((max_tenure_scalar+1,max_tenure_scalar+1))
 serr_b = np.zeros((max_tenure_scalar+1,max_tenure_scalar+1))
+
 
 for k in range(1,max_tenure_scalar+1):
         for j in range(k+1):
@@ -586,6 +630,9 @@ for k in range(1,max_tenure_scalar+1):
                 
                 derr_a[k,j] = dreg_v_a.conf_int(alpha=0.05)[1]["C(max_tenure)[T.%d.0]"%(k)]
                 derr_b[k,j] = dreg_v_b.conf_int(alpha=0.05)[1]["C(max_tenure)[T.%d.0]"%(k)]
+
+                dse_a[k,j] = dreg_v_a.bse["C(max_tenure)[T.%d.0]"%(k)]
+                dse_b[k,j] = dreg_v_b.bse["C(max_tenure)[T.%d.0]"%(k)]
 
                 seffect_a[k,j] = sreg_v_a.params["C(max_tenure)[T.%d]"%(k)]
                 seffect_b[k,j] = sreg_v_b.params["C(max_tenure)[T.%d]"%(k)]
@@ -599,6 +646,9 @@ for k in range(1,max_tenure_scalar+1):
                 
                         derr_a[k,j] += dreg_v_a.conf_int(alpha=0.05)[1]["C(tenure)[T.%d.0]:C(max_tenure)[%d.0]"%(j,k)]
                         derr_b[k,j] += dreg_v_b.conf_int(alpha=0.05)[1]["C(tenure)[T.%d.0]:C(max_tenure)[%d.0]"%(j,k)]
+
+                        dse_a[k,j] += dreg_v_a.bse["C(tenure)[T.%d.0]:C(max_tenure)[%d.0]"%(j,k)]
+                        dse_b[k,j] += dreg_v_b.bse["C(tenure)[T.%d.0]:C(max_tenure)[%d.0]"%(j,k)]
 
                         seffect_a[k,j] += sreg_v_a.params["C(tenure)[T.%d]:C(max_tenure)[%d]"%(j,k)]
                         seffect_b[k,j] += sreg_v_b.params["C(tenure)[T.%d]:C(max_tenure)[%d]"%(j,k)]
@@ -615,6 +665,20 @@ for k in range(1,max_tenure_scalar+1):
 
 
 
+calcol=10
+for k in range(1,max_tenure_scalar+1):
+        for j in range(k+1):
+            caldata2[0][calcol] = deffect_a[k,j]
+            caldata2[1][calcol] = seffect_a[k,j]
+            caldata2[2][calcol] = dse_a[k,j]
+            calcol = calcol+1
+
+for k in range(1,max_tenure_scalar+1):
+        for j in range(k+1):
+            caldata2[0][calcol] = deffect_b[k,j]
+            caldata2[1][calcol] = seffect_b[k,j]
+            caldata2[2][calcol] = dse_b[k,j]
+            calcol = calcol+1
                 
 print('\tMaking plots...')
 
@@ -766,3 +830,8 @@ plt.savefig(outpath + 'life_cycle_dyn2_model_vs_data.pdf',bbox_inches='tight')
 plt.close('all')
 
 
+
+
+
+caldata3 = np.hstack((caldata,caldata2))
+np.savetxt(outpath + "calibration_data.txt",caldata3,delimiter=" ")

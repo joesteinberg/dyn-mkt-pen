@@ -368,6 +368,7 @@ print(tmp)
 print('\nAverage:')
 print(tmp.mean())
 
+
 ##############################################################################################
 
 print('Computing cross-sectional and life-cycle facts...')
@@ -377,9 +378,11 @@ def top5_share(x):
     return (x[mask].sum())/(x.sum())
 
 def reset_multiindex(df,n,suff):
-    levels=df.columns.levels
-    labels=df.columns.labels
-    df.columns=levels[0][labels[0][0:n]].tolist()+[s+suff for s in levels[1][labels[1][n:]].tolist()]
+    tmp = df.columns
+    #levels=df.columns.levels
+    #labels=df.columns.labels
+    df.columns=[x[0] for x in tmp[0:n]] + [x[1]+suff for x in tmp[n:]]
+    #df.columns=levels[0][labels[0][0:n]].tolist()+[s+suff for s in levels[1][labels[1][n:]].tolist()]
     return df
 
 def key_facts(df,industry=0):
@@ -467,3 +470,21 @@ agg_by_d2.to_csv('output/dests_for_c_program.txt',sep=' ',header=False,index=Fal
 agg_by_d.to_pickle('output/bra_microdata_agg_by_d.pik')
 agg_by_d_i.to_pickle('output/bra_microdata_agg_by_d_i.pik')
 agg_by_d2.to_pickle('output/bra_microdata_agg_by_d2.pik')
+
+
+#########################
+
+tmp = merged.groupby(['f','nd_group','y'])['exit'].min().reset_index()
+tmp2 = tmp.groupby('y')['exit'].mean().reset_index()
+mu = tmp2['exit'].mean()
+se = tmp2['exit'].std()/np.sqrt(len(tmp2))
+print('Multilateral exit rate: %0.4g (%0.4g)' %(mu,se))
+
+
+tmp2 = tmp.groupby(['y','nd_group'])['exit'].mean().reset_index()
+tmp3 = tmp2.groupby('nd_group').agg({'exit':[('mean',lambda x:np.mean(x)),('se',lambda x:np.std(x)/np.sqrt(len(x)))]})
+print('By ND group')
+print(tmp3)
+
+
+

@@ -1,7 +1,7 @@
 CC = gcc
 CFLAGS = -Wall -pedantic -fopenmp -mcmodel=medium -ffast-math -DHAVE_INLINE=1 -D_MODEL_MAIN -g -O3
 
-LDFLAGS = -fopenmp -lgsl -lgslcblas -lm -ldl -lgomp -g -O3
+LDFLAGS = -fopenmp -lgsl -lgslcblas -lm -ldl -lgomp -lnlopt -g -O3 -L /usr/local/lib/ -Wl,-R/usr/local/lib/
 
 EXDIR = bin
 ODIR = src/obj

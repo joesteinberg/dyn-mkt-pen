@@ -13,10 +13,10 @@ from matplotlib.patches import Patch
 from matplotlib.lines import Line2D
 from matplotlib.ticker import MultipleLocator
 
-mpl.rc('text', usetex=True)
 #mpl.rc('savefig',bbox_inches='tight')
 mpl.rc('savefig',format='pdf')
 mpl.rc('font',**{'family':'serif','serif':['Palatino Linotype'],'size':8})
+mpl.rc('text', usetex=True)
 mpl.rc('font',size=8)
 mpl.rc('lines',linewidth=1)
 
@@ -135,14 +135,6 @@ file.write('\\\\\nStd. dev.')
 for v,f in zip(vars,fmt):
         file.write('& %s' % locale.format_string(f,tmp[v].std(),grouping=True))
         
-#file.write('\\\\\nUnited States')
-#for v,f in zip(vars,fmt):
-#        file.write('& %s' % locale.format_string(f,tmp[v][tmp.d=='USA'].values[0],grouping=True))
-
-#file.write('\\\\\nIndonesia')
-#for v,f in zip(vars,fmt):
-#        file.write('& %s' % locale.format_string(f,tmp[v][tmp.d=='IDN'].values[0],grouping=True))
-        
 file.write('\\\\\n')
 
 
@@ -163,15 +155,6 @@ for v,f in zip(vars,fmt):
 file.write('\\\\\nStd. dev.')
 for v,f in zip(vars,fmt):
         file.write('& %s' % locale.format_string(f,tmp[v].std(),grouping=True))
-
-#file.write('\\\\\nVietnam')
-#for v,f in zip(vars,fmt):
-#        file.write('& %s' % locale.format_string(f,tmp[v][tmp.d=='USA'].values[0],grouping=True))
-        
-#file.write('\\\\\nArgentina')
-#for v,f in zip(vars,fmt):
-#        file.write('& %s' % locale.format_string(f,tmp[v][tmp.d=='IDN'].values[0],grouping=True))
-
 
 file.write('\\\\\n')
 
@@ -238,12 +221,11 @@ for y in range(2):
             
     ax.set_title(ylabs[y],y=1.02,size=8)
 
-    #calibration_data[0][cal_col] = tmp[ycol].mean()
-    se = np.sqrt(np.diag(cov))
-    calibration_data[0][cal_col] = p[0]
+    #calibration_data[0][cal_col] = p[0]
+    calibration_data[0][cal_col] = tmp[ycol].mean()
     calibration_data[0][cal_col+1] = p[1]
-    calibration_data[2][cal_col] = se[0]
-    calibration_data[2][cal_col+1] = se[1]
+    calibration_data[2][cal_col] = tmp[ycol].std()/np.sqrt(len(ycol))
+    calibration_data[2][cal_col+1] = np.sqrt(np.diag(cov))[1]
     cal_col += 2
 
 ycols=['exit_rate','erel_size','erel_exit_rate']
@@ -265,12 +247,12 @@ for y in range(3):
             
     ax.set_title(ylabs[y],y=1.02,size=8)
 
-    #calibration_data[0][cal_col] = tmp[ycol].mean()
-    se = np.sqrt(np.diag(cov))
-    calibration_data[0][cal_col] = p[0]
+
+    #calibration_data[0][cal_col] = p[0]
+    calibration_data[0][cal_col] = tmp[ycol].mean()
     calibration_data[0][cal_col+1] = p[1]
-    calibration_data[2][cal_col] = se[0]
-    calibration_data[2][cal_col+1] = se[1]
+    calibration_data[2][cal_col] = tmp[ycol].std()/np.sqrt(len(ycol))
+    calibration_data[2][cal_col+1] = np.sqrt(np.diag(cov))[1]
     cal_col += 2
 
 ax1.set_xticks([])
@@ -300,15 +282,18 @@ for y in range(2):
     xvals=np.log(tmp[xcol])
     yvals=yfun[y](tmp[ycol])
     ax.scatter(xvals,yvals,alpha=0.75,zorder=0,label='Model',color=colors[1])
-    z = np.polyfit(xvals,yvals,1)
+    z,cov = np.polyfit(xvals,yvals,1,cov=True)
     p = np.poly1d(z)
     ax.plot(xvals,p(xvals),linestyle='-',color=colors[1],zorder=1,label='Model (trend)')
             
     ax.set_title(ylabs[y],y=1.02,size=8)
 
-    #calibration_data[1][cal_col] = tmp[ycol].mean()
-    calibration_data[1][cal_col] = p[0]
+    calibration_data[1][cal_col] = tmp[ycol].mean()
+    #calibration_data[1][cal_col] = p[0]
     calibration_data[1][cal_col+1] = p[1]
+    calibration_data[2][cal_col] = tmp[ycol].std()/np.sqrt(len(ycol))
+    calibration_data[2][cal_col+1] = np.sqrt(np.diag(cov))[1]
+
     cal_col += 2
 
 
@@ -324,12 +309,15 @@ for y in range(3):
     tmp=agg_by_d2_s
     xvals=np.log(tmp[xcol])
     yvals=yfun[y](tmp[ycol])            
-    z = np.polyfit(xvals,yvals,1)
+    z,cov = np.polyfit(xvals,yvals,1,cov=True)
     p = np.poly1d(z)
 
-    #calibration_data[1][cal_col] = tmp[ycol].mean()
-    calibration_data[1][cal_col] = p[0]
+    calibration_data[1][cal_col] = tmp[ycol].mean()
+    #calibration_data[1][cal_col] = p[0]
     calibration_data[1][cal_col+1] = p[1]
+    calibration_data[2][cal_col] = tmp[ycol].std()/np.sqrt(len(ycol))
+    calibration_data[2][cal_col+1] = np.sqrt(np.diag(cov))[1]
+
     diff = 0.9*(agg_by_d2[ycol].mean() - tmp[ycol].mean())
     
     if(y==2):
@@ -415,33 +403,33 @@ np.savetxt(outpath + "calibration_data.txt",calibration_data,delimiter=" ")
 
 print('\tEstimating relationships between destination characteristics and firm-level variables')
 
-#lhs=['np.log(nf)',
-lhs=['top5_share',
+lhs=['np.log(nf)',
+     'top5_share',
      'avg_nd',
      'exit_rate',
      'erel_size',
      'erel_exit_rate']
 
-#vnames=['Log(num. exporters)',
-vnames=['Top-5 share',
+vnames=['Log num. exporters',
+        'Top-5 share',
         'Avg. num. dests.',
         'Exit rate',
         'Entrant rel. size',
         'Entrant rel. exit rate']
 
 
-#rhs='np.log(gdppc) + np.log(popt) + np.log(tau) + C(y)'
-rhs='np.log(nf) + C(y)'
+rhs='np.log(gdppc) + np.log(popt) + np.log(tau) + C(y)'
+#rhs='np.log(nf) + C(y)'
 formulas=[l+'~'+rhs for l in lhs]
 dregs = [ols(formula=f,data=agg_by_d).fit(cov_type='HC0') for f in formulas]
 
-#rhs='np.log(gdppc) + np.log(popt) + np.log(tau) + C(y) + C(industry)'
-rhs='np.log(nf) + C(y) + C(industry)'
+rhs='np.log(gdppc) + np.log(popt) + np.log(tau) + C(y) + C(industry)'
+#rhs='np.log(nf) + C(y) + C(industry)'
 formulas=[l+'~'+rhs for l in lhs]
 dregs_i = [ols(formula=f,data=agg_by_d_i).fit(cov_type='HC0') for f in formulas]
 
-#rhs='np.log(gdppc) + np.log(popt) + np.log(tau) + C(y)'
-rhs='np.log(nf) + C(y)'
+rhs='np.log(gdppc) + np.log(popt) + np.log(tau) + C(y)'
+#rhs='np.log(nf) + C(y)'
 formulas=[l+'~'+rhs for l in lhs]
 sregs = [ols(formula=f,data=agg_by_d_s).fit(cov_type='HC0') for f in formulas]
          #cov_kwds={'groups':agg_by_d_i.c}) for f in formulas]
@@ -469,7 +457,7 @@ file.write('\\footnotesize\n')
 #file.write('\\renewcommand{\\arraystretch}{1.2}\n')
 file.write('\\begin{center}\n')
 file.write('\\begin{threeparttable}')
-file.write("\\caption{Associations between export participation and exporters' behavior}\n")
+file.write("\\caption{Associations between destination characteristics and exporters' behavior}\n")
 file.write('\\label{tab:regs}\n')
 file.write('\\begin{tabular}{l')
 for i in range(len(vars)):
@@ -489,153 +477,113 @@ file.write('\\midrule\n')
 
          
                 
-#file.write('\\multicolumn{%d}{l}{\\textit{(a) Data, aggregate}}\\\\\n'%(len(vars)+1))
+file.write('\\multicolumn{%d}{l}{\\textit{(a) Data}}\\\\[4pt]\n'%(len(vars)+1))
 
-file.write('Data')
+# file.write('Data')
+# for r in dregs:
+#         file.write('& %0.3f' % r.params['np.log(nf)'])
+# file.write('\\\\\n')
+# for r in dregs:
+#         file.write('& $(%0.3f)$' % (r.HC0_se['np.log(nf)']))
+# file.write('\\\\[4pt]\n')
+
+# file.write('Data, industry-level')
+# for r in dregs_i:
+#         file.write('& %0.3f' % r.params['np.log(nf)'])
+# file.write('\\\\\n')
+# for r in dregs_i:
+#         file.write('& $(%0.3f)$' % (r.HC0_se['np.log(nf)']))
+# file.write('\\\\[4pt]\n')
+
+# file.write('Model')
+# for r in sregs:
+#         file.write('& %0.3f' % r.params['np.log(nf)'])
+# file.write('\\\\\n')
+# for r in sregs:
+#         file.write('& $(%0.3f)$' % (r.HC0_se['np.log(nf)']))
+# file.write('\\\\[4pt]\n')
+
+file.write('log GDPpc')
 for r in dregs:
-        file.write('& %0.3f' % r.params['np.log(nf)'])
+        file.write('& %0.3f' % r.params['np.log(gdppc)'])
 file.write('\\\\\n')
 for r in dregs:
-        file.write('& $(%0.3f)$' % (r.HC0_se['np.log(nf)']))
+        file.write('& $(%0.3f)%s$' % (r.HC0_se['np.log(gdppc)'],signf(r.pvalues['np.log(gdppc)'])))
 file.write('\\\\[4pt]\n')
 
-file.write('Data, industry-level')
-for r in dregs_i:
-        file.write('& %0.3f' % r.params['np.log(nf)'])
+file.write('log population')
+for r in dregs:
+        file.write('& %0.3f' % r.params['np.log(popt)'])
 file.write('\\\\\n')
-for r in dregs_i:
-        file.write('& $(%0.3f)$' % (r.HC0_se['np.log(nf)']))
+for r in dregs:
+        file.write('& $(%0.3f)%s$' % (r.HC0_se['np.log(popt)'],signf(r.pvalues['np.log(popt)'])))
 file.write('\\\\[4pt]\n')
 
-file.write('Model')
+file.write('log trade barrier')
+for r in dregs:
+        file.write('& %0.3f' % r.params['np.log(tau)'])
+file.write('\\\\\n')
+for r in dregs:
+        file.write('& $(%0.3f)%s$' % (r.HC0_se['np.log(tau)'],signf(r.pvalues['np.log(tau)'])))
+file.write('\\\\[4pt]\n')
+
+file.write('Num. observations')
+for r in dregs:
+        file.write('& %s' % "{:,d}".format(int(r.nobs)))
+file.write('\\\\\n')
+
+file.write('$R^2$')
+for r in dregs:
+        file.write('& %0.2f' % r.rsquared)
+file.write('\\\\\n\\midrule\n')
+
+
+
+
+
+file.write('\\multicolumn{%d}{l}{\\textit{(b) Model}}\\\\[4pt]\n'%(len(vars)+1))
+
+file.write('log GDPpc')
 for r in sregs:
-        file.write('& %0.3f' % r.params['np.log(nf)'])
+        file.write('& %0.3f' % r.params['np.log(gdppc)'])
 file.write('\\\\\n')
 for r in sregs:
-        file.write('& $(%0.3f)$' % (r.HC0_se['np.log(nf)']))
+        file.write('& $(%0.3f)%s$' % (r.HC0_se['np.log(gdppc)'],signf(r.pvalues['np.log(gdppc)'])))
 file.write('\\\\[4pt]\n')
 
-# file.write('log GDPpc')
-# for r in dregs:
-#         file.write('& %0.3f' % r.params['np.log(gdppc)'])
-# file.write('\\\\\n')
-# for r in dregs:
-#         file.write('& $(%0.3f)%s$' % (r.HC0_se['np.log(gdppc)'],signf(r.pvalues['np.log(gdppc)'])))
-# file.write('\\\\[4pt]\n')
+file.write('log population')
+for r in sregs:
+        file.write('& %0.3f' % r.params['np.log(popt)'])
+file.write('\\\\\n')
+for r in sregs:
+        file.write('& $(%0.3f)%s$' % (r.HC0_se['np.log(popt)'],signf(r.pvalues['np.log(popt)'])))
+file.write('\\\\[4pt]\n')
 
-# file.write('log population')
-# for r in dregs:
-#         file.write('& %0.3f' % r.params['np.log(popt)'])
-# file.write('\\\\\n')
-# for r in dregs:
-#         file.write('& $(%0.3f)%s$' % (r.HC0_se['np.log(popt)'],signf(r.pvalues['np.log(popt)'])))
-# file.write('\\\\[4pt]\n')
+file.write('log trade barrier')
+for r in sregs:
+        file.write('& %0.3f' % r.params['np.log(tau)'])
+file.write('\\\\\n')
+for r in sregs:
+        file.write('& $(%0.3f)%s$' % (r.HC0_se['np.log(tau)'],signf(r.pvalues['np.log(tau)'])))
+file.write('\\\\[4pt]\n')
 
-# file.write('log trade barrier')
-# for r in dregs:
-#         file.write('& %0.3f' % r.params['np.log(tau)'])
-# file.write('\\\\\n')
-# for r in dregs:
-#         file.write('& $(%0.3f)%s$' % (r.HC0_se['np.log(tau)'],signf(r.pvalues['np.log(tau)'])))
-# file.write('\\\\[4pt]\n')
+file.write('Num. observations')
+for r in sregs:
+        file.write('& %s' % "{:,d}".format(int(r.nobs)))
+file.write('\\\\\n')
 
-# file.write('Num. observations')
-# for r in dregs:
-#         file.write('& %s' % "{:,d}".format(int(r.nobs)))
-# file.write('\\\\\n')
+file.write('$R^2$')
+for r in sregs:
+        file.write('& %0.2f' % r.rsquared)
+file.write('\\\\\n')
 
-# file.write('$R^2$')
-# for r in dregs:
-#         file.write('& %0.2f' % r.rsquared)
-# file.write('\\\\\n')
-
-
-
-
-# file.write('\\multicolumn{%d}{l}{\\textit{(b) Data, industry-level}}\\\\\n'%(len(vars)+1))
-
-# file.write('log GDPpc')
-# for r in dregs_i:
-#         file.write('& %0.3f' % r.params['np.log(gdppc)'])
-# file.write('\\\\\n')
-# for r in dregs_i:
-#         file.write('& $(%0.3f)%s$' % (r.HC0_se['np.log(gdppc)'],signf(r.pvalues['np.log(gdppc)'])))
-# file.write('\\\\[4pt]\n')
-
-# file.write('log population')
-# for r in dregs_i:
-#         file.write('& %0.3f' % r.params['np.log(popt)'])
-# file.write('\\\\\n')
-# for r in dregs_i:
-#         file.write('& $(%0.3f)%s$' % (r.HC0_se['np.log(popt)'],signf(r.pvalues['np.log(popt)'])))
-# file.write('\\\\[4pt]\n')
-
-# file.write('log trade barrier')
-# for r in dregs_i:
-#         file.write('& %0.3f' % r.params['np.log(tau)'])
-# file.write('\\\\\n')
-# for r in dregs_i:
-#         file.write('& $(%0.3f)%s$' % (r.HC0_se['np.log(tau)'],signf(r.pvalues['np.log(tau)'])))
-# file.write('\\\\[4pt]\n')
-
-# file.write('Num. observations')
-# for r in dregs_i:
-#         file.write('& %s' % "{:,d}".format(int(r.nobs)))
-# file.write('\\\\\n')
-
-# file.write('$R^2$')
-# for r in dregs_i:
-#         file.write('& %0.2f' % r.rsquared)
-# file.write('\\\\\n')
-
-
-
-
-
-
-# file.write('\\\\\n\\multicolumn{%d}{l}{\\textit{(c) Model}}\\\\\n'%(len(vars)+1))
-
-# file.write('log GDPpc')
-# for r in sregs:
-#         file.write('& %0.3f' % r.params['np.log(gdppc)'])
-# file.write('\\\\\n')
-# for r in sregs:
-#         file.write('& $(%0.3f)%s$' % (r.HC0_se['np.log(gdppc)'],signf(r.pvalues['np.log(gdppc)'])))
-# file.write('\\\\[4pt]\n')
-
-# file.write('log population')
-# for r in sregs:
-#         file.write('& %0.3f' % r.params['np.log(popt)'])
-# file.write('\\\\\n')
-# for r in sregs:
-#         file.write('& $(%0.3f)%s$' % (r.HC0_se['np.log(popt)'],signf(r.pvalues['np.log(popt)'])))
-# file.write('\\\\[4pt]\n')
-
-# file.write('log trade barrier')
-# for r in sregs:
-#         file.write('& %0.3f' % r.params['np.log(tau)'])
-# file.write('\\\\\n')
-# for r in sregs:
-#         file.write('& $(%0.3f)%s$' % (r.HC0_se['np.log(tau)'],signf(r.pvalues['np.log(tau)'])))
-# file.write('\\\\[4pt]\n')
-
-# file.write('Num. observations')
-# for r in sregs:
-#         file.write('& %s' % "{:,d}".format(int(r.nobs)))
-# file.write('\\\\\n')
-
-# file.write('$R^2$')
-# for r in sregs:
-#         file.write('& %0.2f' % r.rsquared)
-# file.write('\\\\\n')
-
-         
+        
         
 # footer
 file.write('\\bottomrule\n')
 file.write('\\end{tabular}\n')
 file.write('\\begin{tablenotes}\n')
-file.write("\\item All specifications control for year fixed effects. Industry-level specification also includes industry effects. Robust standard errors in parentheses. All coefficient estimates significant to the 0.1\% level.")
+file.write("\\item Source: SECEX, CEPII Gravity Database, and author's calculations. All specifications control for year fixed effects. Robust standard errors in parentheses. $\\S$, $\\ddagger$, and $\\dagger$ denote significance at the 0.1\\%, 1\\%, and 5\\% levels, respectively.")
 file.write('\\end{tablenotes}\n')
 file.write('\\end{threeparttable}\n')
 file.write('\\end{center}\n')

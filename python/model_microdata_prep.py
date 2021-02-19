@@ -69,7 +69,8 @@ dtypes={'f':str,
         'tenure':int,
         'max_tenure':int,
         'ix':int,
-        'iz':int}
+        'iz':int,
+        'multilateral_exit':int}
 
 agged = pd.read_csv(inpath + fname, engine='c', dtype=dtypes, sep=',')
 y0 = agged.y.min()
