@@ -243,3 +243,95 @@
   linebreak();
 
 }
+
+
+
+
+
+
+	      printf("Scatter plots:\n");
+	      printf("\tTop 5 share (avg):             %0.4f %0.4f %0.4f\n",
+		     data_moments[0],model_moments[0],residuals[0]);
+	      printf("\tTop 5 share (slope):           %0.4f %0.4f %0.4f\n",
+		     data_moments[1],model_moments[1],residuals[1]);
+	      printf("\tAvg num dest (avg):            %0.4f %0.4f %0.4f\n",
+		     data_moments[2],model_moments[2],residuals[2]);
+	      printf("\tAvg num dest (slope):         %0.4f %0.4f %0.4f\n",
+		     data_moments[3],model_moments[3],residuals[3]);
+	      printf("\tExit rate (avg):               %0.4f %0.4f %0.4f\n",
+		     data_moments[4],model_moments[4],residuals[4]);
+	      printf("\tExit rate (slope):            %0.4f %0.4f %0.4f\n",
+		     data_moments[5],model_moments[5],residuals[5]);
+	      printf("\tEntrant rel size (avg):        %0.4f %0.4f %0.4f\n",
+		     data_moments[6],model_moments[6],residuals[6]);
+	      printf("\tEntrant rel size (slope):     %0.4f %0.4f %0.4f\n",
+		     data_moments[7],model_moments[7],residuals[7]);
+	      printf("\tEntrant rel exit rate (avg):   %0.4f %0.4f %0.4f\n",
+		     data_moments[8],model_moments[8],residuals[8]);
+	      printf("\tEntrant rel exit rate (slope): %0.4f %0.4f %0.4f\n",
+		     data_moments[9],model_moments[9],residuals[9]);
+
+	      printf("Effects of tenure on survival (hard)\n");
+	      printf("\t1:                            %0.4f %0.4f %0.4f\n",
+		     data_moments[10],model_moments[10],residuals[10]);
+	      printf("\t2:                            %0.4f %0.4f %0.4f\n",
+		     data_moments[11],model_moments[11],residuals[11]);
+	      printf("\t3:                            %0.4f %0.4f %0.4f\n",
+		     data_moments[12],model_moments[12],residuals[12]);
+	      printf("\t4:                            %0.4f %0.4f %0.4f\n",
+		     data_moments[13],model_moments[13],residuals[13]);
+	      printf("\t5:                            %0.4f %0.4f %0.4f\n",
+		     data_moments[14],model_moments[14],residuals[14]);
+
+	      printf("\nEffects of tenure on survival (easy)\n");
+	      printf("\t1:                            %0.4f %0.4f %0.4f\n",
+		     data_moments[15],model_moments[15],residuals[15]);
+	      printf("\t2:                            %0.4f %0.4f %0.4f\n",
+		     data_moments[16],model_moments[16],residuals[16]);
+	      printf("\t3:                            %0.4f %0.4f %0.4f\n",
+		     data_moments[17],model_moments[17],residuals[17]);
+	      printf("\t4:                            %0.4f %0.4f %0.4f\n",
+		     data_moments[18],model_moments[18],residuals[18]);
+	      printf("\t5:                            %0.4f %0.4f %0.4f\n",
+		     data_moments[19],model_moments[19],residuals[19]);
+
+	      printf("\nEffects of tenure:duration on sales (hard)\n");
+	      int i=20;
+	      for(int duration=1; duration<=5; duration++)
+		{
+		 for(int tenure=0; tenure<=duration; tenure++)
+		   {
+		    printf("\t%d:%d                            %0.4f %0.4f %0.4f\n",
+			   tenure,duration,data_moments[i],model_moments[i],residuals[i]);
+		    i++;
+		   }
+		}
+
+	      printf("\nEffects of tenure:duration on sales (easy)\n");
+	      for(int duration=1; duration<=5; duration++)
+		{
+		 for(int tenure=0; tenure<=duration; tenure++)
+		   {
+		    printf("\t%d:%d                            %0.4f %0.4f %0.4f\n",
+			   tenure,duration,data_moments[i],model_moments[i],residuals[i]);
+		    i++;
+		   }
+		}
+
+	      
+	      printf("\nMultilateral ex. part. rate:           %0.4f %0.4f %0.4f\n",
+		     data_moments[i],model_moments[i],residuals[i]);
+	      printf("Multilateral exit rate:                %0.4f %0.4f %0.4f\n",
+		     data_moments[i+1],model_moments[i+1],residuals[i+1]);
+	      printf("Multilateral exit rate (1D):           %0.4f %0.4f %0.4f\n",
+		     data_moments[i+2],model_moments[i+2],residuals[i+2]);
+	      printf("Multilateral exit rate (2D):           %0.4f %0.4f %0.4f\n",
+		     data_moments[i+3],model_moments[i+3],residuals[i+3]);
+	      printf("Multilateral exit rate (3D):           %0.4f %0.4f %0.4f\n",
+		     data_moments[i+4],model_moments[i+4],residuals[i+4]);
+	      printf("Multilateral exit rate (4D):           %0.4f %0.4f %0.4f\n",
+		     data_moments[i+5],model_moments[i+5],residuals[i+5]);
+	      printf("Multilateral exit rate (6D):           %0.4f %0.4f %0.4f\n",
+		     data_moments[i+6],model_moments[i+6],residuals[i+6]);
+	      printf("Multilateral exit rate (10D):          %0.4f %0.4f %0.4f\n",
+		     data_moments[i+7],model_moments[i+7],residuals[i+7]);

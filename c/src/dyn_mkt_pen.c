@@ -878,29 +878,51 @@ void calc_survival_probs()
 
 // assigned parameters and initial guesses
 int init_params()
-{  
+{
+
+  /*
+andidate parameter vector 44:                                                                           
+        sig_x =       1.02000000                                                                         
+        rho_x =       0.98194358                                                                         
+        sig_z =       0.43933157                                                                         
+        rho_z =       0.60418386                                                                         
+        z_lb =        3.56360171                                                                         
+        z_ub =        2.49261931                                                                         
+        psi_n =       0.09784021                                                                         
+        alpha_n =     0.50840453                                                                         
+        beta_n =      0.93977538                                                                         
+        gamma_n =     6.43893845                                                                         
+        psi_o =       0.06338877                                                                         
+        alpha_o =     0.96266760                                                                         
+        beta_o =      0.78924703                                                                         
+        gamma_o =     3.82324476                                                                         
+        delta0 =      34.65234000                                                                        
+        delta1 =      0.00309521    
+  */
+
+
   // initial guesses!!!
   W = 1.0;
   Q = 0.86245704;
-  delta0 = 30.0;
-  delta1 = 0.0018;
+  delta0 = 34.65234;
+  delta1 = 0.00309521;
   theta = 5.0;
   theta_hat = (1.0/theta) * pow(theta/(theta-1.0),1.0-theta);
-  sig_x =  0.90077369;
-  rho_x = 0.94844805;
-  sig_z = 0.2985;
-  rho_z =  0.802;
-  alpha_n = 0.84811;
-  //alpha_o = 0.94831543;
-  alpha_o = 0.975557;
-  beta_n = 0.5996;
-  beta_o = 0.8483;
-  gamma_n = 6.79411;
-  gamma_o = 2.995;
-  psi_n = 0.052294;
-  psi_o = 0.05754;
-  z_grid_mult_lb=3.005;
-  z_grid_mult_ub=2.9975;
+  //sig_x =  0.90124936;
+  sig_x =  1.02;
+  rho_x = 0.98194358;
+  sig_z = 0.43933157;
+  rho_z =  0.60418386;
+  alpha_n = 0.50840453;
+  alpha_o = 0.96266760;
+  beta_n = 0.93977538;
+  beta_o = 0.78924476;
+  gamma_n = 6.43893845;
+  gamma_o = 3.82324476;
+  psi_n = 0.09784021;
+  psi_o = 0.06338877;
+  z_grid_mult_lb=3.56360171;
+  z_grid_mult_ub=2.49261931;
 
   // set all destination-specific variables to mean values... we will use the
   // array of destinations in parallelizing the calibration
@@ -2825,7 +2847,7 @@ int write_lf_dyn_results(char * fname)
 ///////////////////////////////////////////////////////////////////////////////
 
 #define NP 16
-#define NY 68
+#define NY 82
 FILE * results_file;
 int fcnt=0;
 
@@ -2924,11 +2946,11 @@ int work(const double params[NP], double * error)
     return 1;
 
   if(system("python3 -W ignore ../python/life_cycle.py"))
-    return 1;
+  return 1;
 
   printf("\nData processing complete! Time: %0.0f seconds.\n",difftime(stop,start));
 
-  FILE * file = fopen("../python/output/calibration_data.txt","r");
+  FILE * file = fopen("../python/output/calibration_data2.txt","r");
   if(!file)
     {
       printf("Failed to open file with calibration data!\n");
@@ -2963,12 +2985,14 @@ int work(const double params[NP], double * error)
 	}
       else
 	{
+	  
 	  data_moments[NY-8] = 0.25;
 	  model_moments[NY-8] = expart_multi;
 	  
 	  data_moments[NY-7] = 0.34;
 	  model_moments[NY-7] = exit_multi;
 
+	  
 	  data_moments[NY-6] = 0.566251;
 	  model_moments[NY-6] = exit_multi_1d;
 
@@ -3000,9 +3024,12 @@ int work(const double params[NP], double * error)
 	  double sum = 0.0;
 	  for(int i=0; i<NY; i++)
 	    {
-	      double tmp = fabs(data_moments[i]-model_moments[i])/fabs(data_moments[i]);
-	      *error += tmp*tmp;
-	      //*error += tmp*tmp/(weights[i]*weights[i]);
+	      double tmp = fabs(data_moments[i]-model_moments[i]);
+	      //	      if(i==3 || i==4 || i==17 || i==18 || i==19)
+	      //tmp = tmp/fabs(data_moments[i]);
+	      
+	      *error += tmp*tmp/(weights[i]*weights[i]);
+	      ////*error += tmp*tmp/(weights[i]*weights[i]);
 	      sum += 1.0/(weights[i]*weights[i]);
 	      
 	      residuals[i] = tmp;
@@ -3020,103 +3047,168 @@ int work(const double params[NP], double * error)
 	      fprintf(results_file,"\n");
 	      fflush(results_file);
 	    }
-	  *error = sqrt(*error/NY);
-	  //*error = sqrt(*error/sum);
+	  //*error = sqrt(*error/NY);
+	  *error = sqrt(*error/sum);
+
+	  int fails=0;
+	  for(int j=0; j<ND; j++)
+	    {
+	      fails += policy_solved_flag[j];
+	    }
+	  *error = *error + (double)(fails)/((double)(ND));
 
 	  time(&stop);
 
 	  if(verbose>=2)
 	    {
 	      printf("-------------------------------------------------\n");
+	      
 	      printf("\nMoments:                               data model diff:\n\n");
 
-	      printf("Scatter plots:\n");
-	      printf("\tTop 5 share (avg):             %0.4f %0.4f %0.4f\n",
+	      printf("\tNum. exporters (cv):           %+0.4f %+0.4f %0.4f\n",
 		     data_moments[0],model_moments[0],residuals[0]);
-	      printf("\tTop 5 share (slope):           %0.4f %0.4f %0.4f\n",
+	      printf("\tTop 5 share (avg):             %+0.4f %+0.4f %0.4f\n",
 		     data_moments[1],model_moments[1],residuals[1]);
-	      printf("\tAvg num dest (avg):            %0.4f %0.4f %0.4f\n",
+	      //printf("\tTop 5 share (iqr):             %+0.4f %+0.4f %0.4f\n",
+	      //	     data_moments[2],model_moments[2],residuals[2]);
+	      printf("\tAvg num dest (avg):            %+0.3f %+0.3f %0.4f\n",
 		     data_moments[2],model_moments[2],residuals[2]);
-	      printf("\tAvg num dest (slope):         %0.4f %0.4f %0.4f\n",
+	      //printf("\tAvg num dest (iqr):            %+0.4f %+0.4f %0.4f\n",
+	      //	     data_moments[4],model_moments[4],residuals[4]);
+	      printf("\tExit rate (avg):               %+0.4f %+0.4f %0.4f\n",
 		     data_moments[3],model_moments[3],residuals[3]);
-	      printf("\tExit rate (avg):               %0.4f %0.4f %0.4f\n",
+	      //printf("\tExit rate (iqr):               %+0.4f %+0.4f %0.4f\n",
+	      //     data_moments[6],model_moments[6],residuals[6]);
+	      printf("\tEntrant rel size (avg):        %+0.4f %+0.4f %0.4f\n",
 		     data_moments[4],model_moments[4],residuals[4]);
-	      printf("\tExit rate (slope):            %0.4f %0.4f %0.4f\n",
+	      //printf("\tEntrant rel size (iqr):        %+0.4f %+0.4f %0.4f\n",
+	      //	     data_moments[8],model_moments[8],residuals[8]);
+	      printf("\tEntrant rel exit rate (avg):   %+0.4f %+0.4f %0.4f\n",
 		     data_moments[5],model_moments[5],residuals[5]);
-	      printf("\tEntrant rel size (avg):        %0.4f %0.4f %0.4f\n",
-		     data_moments[6],model_moments[6],residuals[6]);
-	      printf("\tEntrant rel size (slope):     %0.4f %0.4f %0.4f\n",
-		     data_moments[7],model_moments[7],residuals[7]);
-	      printf("\tEntrant rel exit rate (avg):   %0.4f %0.4f %0.4f\n",
-		     data_moments[8],model_moments[8],residuals[8]);
-	      printf("\tEntrant rel exit rate (slope): %0.4f %0.4f %0.4f\n",
-		     data_moments[9],model_moments[9],residuals[9]);
+	      //printf("\tEntrant rel exit rate (iqr):   %+0.4f %+0.4f %0.4f\n",
+	      //     data_moments[10],model_moments[10],residuals[10]);
 
-	      printf("Effects of tenure on survival (hard)\n");
-	      printf("\t1:                            %0.4f %0.4f %0.4f\n",
-		     data_moments[10],model_moments[10],residuals[10]);
-	      printf("\t2:                            %0.4f %0.4f %0.4f\n",
-		     data_moments[11],model_moments[11],residuals[11]);
-	      printf("\t3:                            %0.4f %0.4f %0.4f\n",
-		     data_moments[12],model_moments[12],residuals[12]);
-	      printf("\t4:                            %0.4f %0.4f %0.4f\n",
-		     data_moments[13],model_moments[13],residuals[13]);
-	      printf("\t5:                            %0.4f %0.4f %0.4f\n",
-		     data_moments[14],model_moments[14],residuals[14]);
+	      int cnt=6;
+	      
+	      printf("\tNum. exporters (beta rgdp):    %+0.4f %+0.4f %0.4f\n",
+		     data_moments[cnt],model_moments[cnt],residuals[cnt]);
+	      printf("\tNum. exporters (beta pop):     %+0.4f %+0.4f %0.4f\n",
+		     data_moments[cnt+1],model_moments[cnt+1],residuals[cnt+1]);
+	      printf("\tNum. exporters (beta tau):     %+0.4f %+0.4f %0.4f\n",
+		     data_moments[cnt+2],model_moments[cnt+2],residuals[cnt+2]);
+	      cnt=cnt+3;
 
-	      printf("\nEffects of tenure on survival (easy)\n");
-	      printf("\t1:                            %0.4f %0.4f %0.4f\n",
-		     data_moments[15],model_moments[15],residuals[15]);
-	      printf("\t2:                            %0.4f %0.4f %0.4f\n",
-		     data_moments[16],model_moments[16],residuals[16]);
-	      printf("\t3:                            %0.4f %0.4f %0.4f\n",
-		     data_moments[17],model_moments[17],residuals[17]);
-	      printf("\t4:                            %0.4f %0.4f %0.4f\n",
-		     data_moments[18],model_moments[18],residuals[18]);
-	      printf("\t5:                            %0.4f %0.4f %0.4f\n",
-		     data_moments[19],model_moments[19],residuals[19]);
+	      printf("\tTop 5 share (beta rgdp):       %+0.4f %+0.4f %0.4f\n",
+		     data_moments[cnt],model_moments[cnt],residuals[cnt]);
+	      printf("\tTop 5 share (beta pop):        %+0.4f %+0.4f %0.4f\n",
+		     data_moments[cnt+1],model_moments[cnt+1],residuals[cnt+1]);
+	      printf("\tTop 5 share (beta tau):        %+0.4f %+0.4f %0.4f\n",
+		     data_moments[cnt+2],model_moments[cnt+2],residuals[cnt+2]);
+	      cnt=cnt+3;
 
-	      printf("\nEffects of tenure:duration on sales (hard)\n");
-	      int i=20;
+	      printf("\tAvg num dest (beta rgdp):      %+0.4f %+0.4f %0.4f\n",
+		     data_moments[cnt],model_moments[cnt],residuals[cnt]);
+	      printf("\tAvg num dest (beta pop):       %+0.4f %+0.4f %0.4f\n",
+		     data_moments[cnt+1],model_moments[cnt+1],residuals[cnt+1]);
+	      printf("\tAvg num dest (beta tau):       %+0.4f %+0.4f %0.4f\n",
+		     data_moments[cnt+2],model_moments[cnt+2],residuals[cnt+2]);
+	      cnt=cnt+3;
+
+	      printf("\tExit rate (beta rgdp):         %+0.4f %+0.4f %0.4f\n",
+		     data_moments[cnt],model_moments[cnt],residuals[cnt]);
+	      printf("\tExit rate (beta pop):          %+0.4f %+0.4f %0.4f\n",
+		     data_moments[cnt+1],model_moments[cnt+1],residuals[cnt+1]);
+	      printf("\tExit rate (beta tau):          %+0.4f %+0.4f %0.4f\n",
+		     data_moments[cnt+2],model_moments[cnt+2],residuals[cnt+2]);
+	      cnt=cnt+3;
+
+	      printf("\tEntrant rel size (beta rgdp):  %+0.4f %+0.4f %0.4f\n",
+		     data_moments[cnt],model_moments[cnt],residuals[cnt]);
+	      printf("\tEntrant rel size (beta pop):   %+0.4f %+0.4f %0.4f\n",
+		     data_moments[cnt+1],model_moments[cnt+1],residuals[cnt+1]);
+	      printf("\tEntrant rel size (beta tau):   %+0.4f %+0.4f %0.4f\n",
+		     data_moments[cnt+2],model_moments[cnt+2],residuals[cnt+2]);
+	      cnt=cnt+3;
+
+	      printf("\tEntrant rel exit (beta rgdp):  %+0.4f %+0.4f %0.4f\n",
+		     data_moments[cnt],model_moments[cnt],residuals[cnt]);
+	      printf("\tEntrant rel exit (beta pop):   %+0.4f %+0.4f %0.4f\n",
+		     data_moments[cnt+1],model_moments[cnt+1],residuals[cnt+1]);
+	      printf("\tEntrant rel exit (beta tau):   %+0.4f %+0.4f %0.4f\n",
+		     data_moments[cnt+2],model_moments[cnt+2],residuals[cnt+2]);
+	      cnt=cnt+3;
+
+	      printf("\n\tEffects of tenure on survival (hard)\n");
+	      printf("\t1:                            %+0.4f %+0.4f %0.4f\n",
+		     data_moments[cnt],model_moments[cnt],residuals[cnt]);
+	      printf("\t2:                            %+0.4f %+0.4f %0.4f\n",
+		     data_moments[cnt+1],model_moments[cnt+1],residuals[cnt+1]);
+	      printf("\t3:                            %+0.4f %+0.4f %0.4f\n",
+		     data_moments[cnt+2],model_moments[cnt+2],residuals[cnt+2]);
+	      printf("\t4:                            %+0.4f %+0.4f %0.4f\n",
+		     data_moments[cnt+3],model_moments[cnt+3],residuals[cnt+3]);
+	      printf("\t5:                            %+0.4f %+0.4f %0.4f\n",
+		     data_moments[cnt+4],model_moments[cnt+4],residuals[cnt+4]);
+	      cnt = cnt+5;
+
+	      printf("\n\tEffects of tenure on survival (easy)\n");
+	      printf("\t1:                            %+0.4f %+0.4f %0.4f\n",
+		     data_moments[cnt],model_moments[cnt],residuals[cnt]);
+	      printf("\t2:                            %+0.4f %+0.4f %0.4f\n",
+		     data_moments[cnt+1],model_moments[cnt+1],residuals[cnt+1]);
+	      printf("\t3:                            %+0.4f %+0.4f %0.4f\n",
+		     data_moments[cnt+2],model_moments[cnt+2],residuals[cnt+2]);
+	      printf("\t4:                            %+0.4f %+0.4f %0.4f\n",
+		     data_moments[cnt+3],model_moments[cnt+3],residuals[cnt+3]);
+	      printf("\t5:                            %+0.4f %+0.4f %0.4f\n",
+		     data_moments[cnt+4],model_moments[cnt+4],residuals[cnt+4]);
+	      cnt=cnt+5;
+
+	      printf("\n\tEffects of tenure:duration on sales (hard)\n");
 	      for(int duration=1; duration<=5; duration++)
 		{
 		 for(int tenure=0; tenure<=duration; tenure++)
 		   {
-		    printf("\t%d:%d                            %0.4f %0.4f %0.4f\n",
-			   tenure,duration,data_moments[i],model_moments[i],residuals[i]);
-		    i++;
+		    printf("\t%d:%d                            %+0.4f %+0.4f %0.4f\n",
+			   tenure,duration,data_moments[cnt],model_moments[cnt],residuals[cnt]);
+		    cnt++;
 		   }
 		}
 
-	      printf("\nEffects of tenure:duration on sales (easy)\n");
+	      printf("\n\tEffects of tenure:duration on sales (easy)\n");
 	      for(int duration=1; duration<=5; duration++)
 		{
 		 for(int tenure=0; tenure<=duration; tenure++)
 		   {
-		    printf("\t%d:%d                            %0.4f %0.4f %0.4f\n",
-			   tenure,duration,data_moments[i],model_moments[i],residuals[i]);
-		    i++;
+		    printf("\t%d:%d                            %+0.4f %+0.4f %0.4f\n",
+			   tenure,duration,data_moments[cnt],model_moments[cnt],residuals[cnt]);
+		    cnt++;
 		   }
 		}
 
 	      
-	      printf("\nMultilateral ex. part. rate:           %0.4f %0.4f %0.4f\n",
-		     data_moments[i],model_moments[i],residuals[i]);
-	      printf("Multilateral exit rate:                %0.4f %0.4f %0.4f\n",
-		     data_moments[i+1],model_moments[i+1],residuals[i+1]);
-	      printf("Multilateral exit rate (1D):           %0.4f %0.4f %0.4f\n",
-		     data_moments[i+2],model_moments[i+2],residuals[i+2]);
-	      printf("Multilateral exit rate (2D):           %0.4f %0.4f %0.4f\n",
-		     data_moments[i+3],model_moments[i+3],residuals[i+3]);
-	      printf("Multilateral exit rate (3D):           %0.4f %0.4f %0.4f\n",
-		     data_moments[i+4],model_moments[i+4],residuals[i+4]);
-	      printf("Multilateral exit rate (4D):           %0.4f %0.4f %0.4f\n",
-		     data_moments[i+5],model_moments[i+5],residuals[i+5]);
-	      printf("Multilateral exit rate (6D):           %0.4f %0.4f %0.4f\n",
-		     data_moments[i+6],model_moments[i+6],residuals[i+6]);
-	      printf("Multilateral exit rate (10D):          %0.4f %0.4f %0.4f\n",
-		     data_moments[i+7],model_moments[i+7],residuals[i+7]);
-
+	      printf("\n\tMultilateral ex. part. rate:   %0.4f %0.4f %0.4f\n",
+		     data_moments[cnt],model_moments[cnt],residuals[cnt]);
+	      printf("\tMultilateral exit rate:        %0.4f %0.4f %0.4f\n",
+		     data_moments[cnt+1],model_moments[cnt+1],residuals[cnt+1]);
+	      printf("\tMultilateral exit rate (1D):   %0.4f %0.4f %0.4f\n",
+		     data_moments[cnt+2],model_moments[cnt+2],residuals[cnt+2]);
+	      printf("\tMultilateral exit rate (2D):   %0.4f %0.4f %0.4f\n",
+		     data_moments[cnt+3],model_moments[cnt+3],residuals[cnt+3]);
+	      printf("\tMultilateral exit rate (3D):   %0.4f %0.4f %0.4f\n",
+		     data_moments[cnt+4],model_moments[cnt+4],residuals[cnt+4]);
+	      printf("\tMultilateral exit rate (4D):   %0.4f %0.4f %0.4f\n",
+		     data_moments[cnt+5],model_moments[cnt+5],residuals[cnt+5]);
+	      printf("\tMultilateral exit rate (6D):   %0.4f %0.4f %0.4f\n",
+		     data_moments[cnt+6],model_moments[cnt+6],residuals[cnt+6]);
+	      printf("\tMultilateral exit rate (10D):  %0.4f %0.4f %0.4f\n",
+		     data_moments[cnt+7],model_moments[cnt+7],residuals[cnt+7]);
+	      
+	      printf("\n\tNumber of failed destinations:       %d\n",fails);
+	      /*printf("\tMultilateral ex. part. rate:   %+0.4f %+0.4f %0.4f\n",
+		     data_moments[cnt],model_moments[cnt],residuals[cnt]);
+	      printf("\tMultilateral exit rate:        %+0.4f %+0.4f %0.4f\n",
+	      data_moments[cnt+1],model_moments[cnt+1],residuals[cnt+1]);*/
 	    }
 	  
 	  printf("\nFitness evaluation complete! Runtime = %0.0f seconds. Error = %0.8f\n",difftime(stop,start),*error);
@@ -3239,18 +3331,18 @@ int main(int argc, char * argv[])
       linebreak();
       linebreak();
       
-      double lb[NP] = {0.85, 0.8,
-		       0.15, 0.6,
-		       0.03, 0.2, 4.0,
-		       0.03, 0.25, 1.25,
-		       10.0, 0.0005,
+      double lb[NP] = {0.95, 0.8,
+		       0.25, 0.6,
+		       0.05, 0.2, 4.0,
+		       0.05, 0.25, 2.25,
+		       25.0, 0.0005,
 		       0.2, 0.2,
-		       1.0,1.0};
-      double ub[NP] = {0.95, 0.975,
-		       0.65, 0.925,
-		       0.06, 1.3, 7.5,
-		       0.06, 1.3, 3.0,
-		       40.0, 0.03,
+		       2.0,2.0};
+      double ub[NP] = {1.15, 0.99,
+		       0.5, 0.925,
+		       0.1, 1.3, 7.5,
+		       0.1, 1.3, 5.0,
+		       45.0, 0.01,
 		       1.3, 1.3,
 		       4.0,4.0};
   

@@ -26,6 +26,14 @@ colors=['#377eb8','#e41a1c','#4daf4a','#984ea3']
 inpath='/home/joseph/Research/ongoing_projects/dyn_mkt_pen/v2/programs/python/output/'
 outpath='/home/joseph/Research/ongoing_projects/dyn_mkt_pen/v2/programs/python/output/'
 
+# column 1: coefficient of variation (nf)
+# column 2: top 5 avg
+# column 3: avg num dest avg
+# column 4: exit rate avg
+# column 5: rel entrant size avg
+# column 6: rel entrant exit rate avg
+calibration_data=np.zeros((3,6+18))
+
 ##############################################################################################3
 
 print('\tLoading the processed microdata...')
@@ -68,9 +76,6 @@ elif len(sys.argv)>1 and sys.argv[1]=='acr2':
 
 countries = ['BRA']
 
-#usa_d = agg_by_d2[agg_by_d2.d=='USA']
-#usa_s = agg_by_d2_s[agg_by_d2_s.d=='USA']
-#agg_by_d2_s['nf'] = agg_by_d2_s['nf']*(usa_d.nf.values[0]/usa_s.nf.values[0])
 
 ##############################################################################################3
 
@@ -119,7 +124,7 @@ file.write('\\midrule\n')
 
 tmp = agg_by_d2
 file.write('\\multicolumn{%d}{l}{\\textit{(a) Data}}\\\\\n'%(len(vars)+1))
-        
+
 file.write('Mean')
 for v,f in zip(vars,fmt):
         file.write('& %s' % locale.format_string(f,tmp[v].mean(),grouping=True))
@@ -136,7 +141,6 @@ for v,f in zip(vars,fmt):
         file.write('& %s' % locale.format_string(f,tmp[v].std(),grouping=True))
         
 file.write('\\\\\n')
-
 
 tmp = agg_by_d2_s
 file.write('\\\\\n\\multicolumn{%d}{l}{\\textit{(b) Model}}\\\\\n'%(len(vars)+1))
@@ -158,33 +162,40 @@ for v,f in zip(vars,fmt):
 
 file.write('\\\\\n')
 
-
-
 # footer
 file.write('\\bottomrule\n')
 file.write('\\end{tabular}\n')
 file.write('\\end{center}\n')
 file.write('\\normalsize\n')
 file.write('\\end{table}\n')
-#file.write('\\end{landscape}\n')
 
 file.close()
+
+# load in the means and standard deviations of the exporter behavior moments
+# note that for number of exporters, we use only the coefficient of variation
+iqr = lambda x: np.subtract(*np.percentile(x, [75, 25]))
+
+calcol=0
+n=len(agg_by_d2)
+for v in vars:
+        if(v=='nf'):
+                cv= agg_by_d2[v].std()/agg_by_d2[v].mean()
+                calibration_data[0][calcol] = cv
+                calibration_data[1][calcol] = agg_by_d2_s[v].std()/agg_by_d2_s[v].mean()
+                calibration_data[2][calcol] = cv/np.sqrt(2*n) * np.sqrt(1+2*(cv/100)*(cv/100))
+                calcol = calcol+1
+        else:
+                calibration_data[0][calcol] = agg_by_d2[v].mean()
+                calibration_data[1][calcol] = agg_by_d2_s[v].mean()
+                calibration_data[2][calcol] = agg_by_d2[v].std()/np.sqrt(n)
+                calcol = calcol+1
+                #calibration_data[0][calcol] = iqr(agg_by_d2[v])
+                #calibration_data[1][calcol] = iqr(agg_by_d2_s[v])
+                #calcol = calcol+1
 
 #############################################################################
 
 print('\tCreating scatter plots and storing calibration targets...')
-
-# column 1: top 5 avg
-# column 2: top 5 slope
-# column 3: avg num dest avg
-# column 4: avg num dest slope
-# column 5: exit rate avg
-# column 6: exit rate slope
-# column 7: rel entrant size avg
-# column 8: rel entrant size slope
-# column 9: rel entrant exit rate avg
-# column 10: rel entrant exit rate slope
-calibration_data=np.zeros((3,10))
 
 fig = plt.figure(figsize=(6.5,5.5))
 ax1 = fig.add_subplot(221)
@@ -222,10 +233,10 @@ for y in range(2):
     ax.set_title(ylabs[y],y=1.02,size=8)
 
     #calibration_data[0][cal_col] = p[0]
-    calibration_data[0][cal_col] = tmp[ycol].mean()
-    calibration_data[0][cal_col+1] = p[1]
-    calibration_data[2][cal_col] = tmp[ycol].std()/np.sqrt(len(ycol))
-    calibration_data[2][cal_col+1] = np.sqrt(np.diag(cov))[1]
+    #calibration_data[0][cal_col] = tmp[ycol].mean()
+    #calibration_data[0][cal_col+1] = p[1]
+    #calibration_data[2][cal_col] = tmp[ycol].std()/np.sqrt(len(ycol))
+    #calibration_data[2][cal_col+1] = np.sqrt(np.diag(cov))[1]
     cal_col += 2
 
 ycols=['exit_rate','erel_size','erel_exit_rate']
@@ -249,10 +260,10 @@ for y in range(3):
 
 
     #calibration_data[0][cal_col] = p[0]
-    calibration_data[0][cal_col] = tmp[ycol].mean()
-    calibration_data[0][cal_col+1] = p[1]
-    calibration_data[2][cal_col] = tmp[ycol].std()/np.sqrt(len(ycol))
-    calibration_data[2][cal_col+1] = np.sqrt(np.diag(cov))[1]
+    #calibration_data[0][cal_col] = tmp[ycol].mean()
+    #calibration_data[0][cal_col+1] = p[1]
+    #calibration_data[2][cal_col] = tmp[ycol].std()/np.sqrt(len(ycol))
+    #calibration_data[2][cal_col+1] = np.sqrt(np.diag(cov))[1]
     cal_col += 2
 
 ax1.set_xticks([])
@@ -288,11 +299,11 @@ for y in range(2):
             
     ax.set_title(ylabs[y],y=1.02,size=8)
 
-    calibration_data[1][cal_col] = tmp[ycol].mean()
+    #calibration_data[1][cal_col] = tmp[ycol].mean()
     #calibration_data[1][cal_col] = p[0]
-    calibration_data[1][cal_col+1] = p[1]
-    calibration_data[2][cal_col] = tmp[ycol].std()/np.sqrt(len(ycol))
-    calibration_data[2][cal_col+1] = np.sqrt(np.diag(cov))[1]
+    #calibration_data[1][cal_col+1] = p[1]
+    #calibration_data[2][cal_col] = tmp[ycol].std()/np.sqrt(len(ycol))
+    #calibration_data[2][cal_col+1] = np.sqrt(np.diag(cov))[1]
 
     cal_col += 2
 
@@ -312,11 +323,11 @@ for y in range(3):
     z,cov = np.polyfit(xvals,yvals,1,cov=True)
     p = np.poly1d(z)
 
-    calibration_data[1][cal_col] = tmp[ycol].mean()
+    #calibration_data[1][cal_col] = tmp[ycol].mean()
     #calibration_data[1][cal_col] = p[0]
-    calibration_data[1][cal_col+1] = p[1]
-    calibration_data[2][cal_col] = tmp[ycol].std()/np.sqrt(len(ycol))
-    calibration_data[2][cal_col+1] = np.sqrt(np.diag(cov))[1]
+    #calibration_data[1][cal_col+1] = p[1]
+    #calibration_data[2][cal_col] = tmp[ycol].std()/np.sqrt(len(ycol))
+    #calibration_data[2][cal_col+1] = np.sqrt(np.diag(cov))[1]
 
     diff = 0.9*(agg_by_d2[ycol].mean() - tmp[ycol].mean())
     
@@ -397,7 +408,7 @@ plt.close('all')
 
 #calibration_data[0][10] = len(agg_by_d2)
 #calibration_data[1][10] = len(agg_by_d2_s)
-np.savetxt(outpath + "calibration_data.txt",calibration_data,delimiter=" ")
+#np.savetxt(outpath + "calibration_data.txt",calibration_data,delimiter=" ")
 
 #############################################################################
 
@@ -591,3 +602,21 @@ file.write('\\normalsize\n')
 file.write('\\end{table}\n')
 #file.write('\\end{landscape}\n')
 
+
+for rd, rs in zip(dregs,sregs):
+        calibration_data[0][calcol] = rd.params['np.log(gdppc)']
+        calibration_data[1][calcol] = rs.params['np.log(gdppc)']
+        calibration_data[2][calcol] = rd.HC0_se['np.log(gdppc)']
+        calcol = calcol + 1
+        
+        calibration_data[0][calcol] = rd.params['np.log(popt)']
+        calibration_data[1][calcol] = rs.params['np.log(popt)']
+        calibration_data[2][calcol] = rd.HC0_se['np.log(popt)']
+        calcol = calcol + 1
+        
+        calibration_data[0][calcol] = rd.params['np.log(tau)']
+        calibration_data[1][calcol] = rs.params['np.log(tau)']
+        calibration_data[2][calcol] = rd.HC0_se['np.log(tau)']
+        calcol = calcol + 1
+
+np.savetxt(outpath + "calibration_data.txt",calibration_data,delimiter=" ")
