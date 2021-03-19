@@ -200,8 +200,8 @@ agged['nd_group'] = agged.nd.apply(which_nd_group)
 agged['drank'] = agged.groupby(['f','industry','y'])['v']\
                         .transform(lambda x: x.rank(ascending=False))\
                         .astype(int)
-agged.loc[agged.drank>=10,'drank']=10
-agged.loc[agged.drank.isin(range(5,10)),'drank'] = 6
+#agged.loc[agged.drank>=10,'drank']=10
+#agged.loc[agged.drank.isin(range(5,10)),'drank'] = 6
 
 # count number of months
 mcnt = df_imax.groupby(['f','y','d'])['m'].nunique().reset_index()

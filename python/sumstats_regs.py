@@ -13,10 +13,10 @@ from matplotlib.patches import Patch
 from matplotlib.lines import Line2D
 from matplotlib.ticker import MultipleLocator
 
-#mpl.rc('savefig',bbox_inches='tight')
-mpl.rc('savefig',format='pdf')
-mpl.rc('font',**{'family':'serif','serif':['Palatino Linotype'],'size':8})
+
 mpl.rc('text', usetex=True)
+mpl.rc('savefig',format='pdf')
+mpl.rc('font',**{'family':'serif','serif':['Palatino'],'size':8})
 mpl.rc('font',size=8)
 mpl.rc('lines',linewidth=1)
 
@@ -56,22 +56,11 @@ if len(sys.argv)>1 and sys.argv[1]=='sunk':
         agg_by_d2_s_alt = pd.read_pickle(inpath + 'sunkcost_microdata_agg_by_d2.pik')        
         pref='sunkcost'
         altlab='Sunk cost'
-elif len(sys.argv)>1 and sys.argv[1]=='sunk2':
-        agg_by_d_s_alt = pd.read_pickle(inpath + 'sunkcost2_microdata_agg_by_d.pik')
-        agg_by_d2_s_alt = pd.read_pickle(inpath + 'sunkcost2_microdata_agg_by_d2.pik')
-        pref='sunkcost2'
-        altlab='Sunk cost v2'
 elif len(sys.argv)>1 and sys.argv[1]=='acr':
         agg_by_d_s_alt = pd.read_pickle(inpath + 'acr_microdata_agg_by_d.pik')
         agg_by_d2_s_alt = pd.read_pickle(inpath + 'acr_microdata_agg_by_d2.pik')
         pref='acr'
         altlab='Exog. entrant dyn.'
-
-elif len(sys.argv)>1 and sys.argv[1]=='acr2':
-        agg_by_d_s_alt = pd.read_pickle(inpath + 'acr2_microdata_agg_by_d.pik')
-        agg_by_d2_s_alt = pd.read_pickle(inpath + 'acr2_microdata_agg_by_d2.pik')
-        pref='acr2'
-        altlab='Exog. entrant dyn. v2'
 
 
 countries = ['BRA']
@@ -489,30 +478,6 @@ file.write('\\midrule\n')
          
                 
 file.write('\\multicolumn{%d}{l}{\\textit{(a) Data}}\\\\[4pt]\n'%(len(vars)+1))
-
-# file.write('Data')
-# for r in dregs:
-#         file.write('& %0.3f' % r.params['np.log(nf)'])
-# file.write('\\\\\n')
-# for r in dregs:
-#         file.write('& $(%0.3f)$' % (r.HC0_se['np.log(nf)']))
-# file.write('\\\\[4pt]\n')
-
-# file.write('Data, industry-level')
-# for r in dregs_i:
-#         file.write('& %0.3f' % r.params['np.log(nf)'])
-# file.write('\\\\\n')
-# for r in dregs_i:
-#         file.write('& $(%0.3f)$' % (r.HC0_se['np.log(nf)']))
-# file.write('\\\\[4pt]\n')
-
-# file.write('Model')
-# for r in sregs:
-#         file.write('& %0.3f' % r.params['np.log(nf)'])
-# file.write('\\\\\n')
-# for r in sregs:
-#         file.write('& $(%0.3f)$' % (r.HC0_se['np.log(nf)']))
-# file.write('\\\\[4pt]\n')
 
 file.write('log GDPpc')
 for r in dregs:

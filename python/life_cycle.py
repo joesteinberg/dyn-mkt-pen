@@ -17,11 +17,11 @@ from matplotlib.lines import Line2D
 from matplotlib.ticker import MultipleLocator
 
 mpl.rc('text', usetex=True)
-#mpl.rc('savefig',bbox_inches='tight')
 mpl.rc('savefig',format='pdf')
-mpl.rc('font',**{'family':'serif','serif':['Palatino Linotype'],'size':8})
+mpl.rc('font',**{'family':'serif','serif':['Palatino'],'size':8})
 mpl.rc('font',size=8)
 mpl.rc('lines',linewidth=1)
+
 
 alpha=0.8
 colors=['#377eb8','#e41a1c','#4daf4a','#984ea3','#ff7f00','#ffff33']
@@ -161,9 +161,9 @@ df2s = df2[df2.max_tenure>=max_tenure_scalar].reset_index(drop=True)
 
 print('\tEstimating tenure effect regressions on actual data...')
 
-f1 = 'np.log(v) ~ C(d) + C(cohort) + C(tenure)'
-dreg_v_a = ols(formula=f1,data=dfs[dfs.grp==0]).fit(cov_type='HC0')
-dreg_v_b= ols(formula=f1,data=dfs[dfs.grp==1]).fit(cov_type='HC0')
+#f1 = 'np.log(v) ~ C(d) + C(cohort) + C(tenure)'
+#dreg_v_a = ols(formula=f1,data=dfs[dfs.grp==0]).fit(cov_type='HC0')
+#dreg_v_b= ols(formula=f1,data=dfs[dfs.grp==1]).fit(cov_type='HC0')
 
 f2 = 'exit ~ C(d) + C(cohort) + C(tenure)'
 dreg_x_a = ols(formula=f2,data=df[df.grp==0]).fit(cov_type='HC0')
@@ -173,9 +173,9 @@ dreg_x = ols(formula=f2,data=df).fit(cov_type='HC0')
 
 print('\tEstimating tenure effect regressions on simulated data...')
 
-f1 = 'np.log(v) ~ C(d) + C(tenure)'
-sreg_v_a = ols(formula=f1,data=df2s[df2s.grp==0]).fit(cov_type='HC0')
-sreg_v_b = ols(formula=f1,data=df2s[df2s.grp==1]).fit(cov_type='HC0')
+#f1 = 'np.log(v) ~ C(d) + C(tenure)'
+#sreg_v_a = ols(formula=f1,data=df2s[df2s.grp==0]).fit(cov_type='HC0')
+#sreg_v_b = ols(formula=f1,data=df2s[df2s.grp==1]).fit(cov_type='HC0')
 
 f2 = 'exit ~ C(d) + C(tenure)'
 sreg_x_a = ols(formula=f2,data=df2[df2.grp==0]).fit(cov_type='HC0')
@@ -226,57 +226,9 @@ caldata2[1][9] = sreg_x_b.params['C(tenure)[T.5]']
 #############################################################################
         
 print('\tMaking plots of tenure effects...')
+labs=['Conditional exit rate (0 at entry)']
 
-labs=['(a) Log exports (0 at entry)',
-      'Conditional exit rate (0 at entry)']
-
-fig1,axes1=plt.subplots(1,2,figsize=(7,3),sharex=True,sharey=False)
-
-deffect_a = np.zeros(int(max_tenure_scalar+1))
-deffect_b = np.zeros(int(max_tenure_scalar+1))
-derr_a = np.zeros(int(max_tenure_scalar+1))
-derr_b = np.zeros(int(max_tenure_scalar+1))
-
-# log exports
-for k in range(1,int(max_tenure_scalar+1)):
-        dcoeff_a = dreg_v_a.params["C(tenure)[T.%d.0]"%(k)]
-        dcoeff_b = dreg_v_b.params["C(tenure)[T.%d.0]"%(k)]
-        
-        deffect_a[k] = dcoeff_a
-        deffect_b[k] = dcoeff_b
-        
-        derr_a[k] = dreg_v_a.conf_int(alpha=0.05)[1]["C(tenure)[T.%d.0]"%(k)]-deffect_a[k]
-        derr_b[k] = dreg_v_b.conf_int(alpha=0.05)[1]["C(tenure)[T.%d.0]"%(k)]-deffect_b[k]
-                        
-axes1[0].set_title(labs[0],y=1.025)
-
-#(_, caps, _)=axes1[0].errorbar(x=range(max_tenure_scalar+1),y=deffect_a,yerr=derr_a,
-axes1[0].plot(range(max_tenure_scalar+1),deffect_a,
-              color=colors[0],
-              alpha=0.5,
-              marker='o',
-              linewidth=1,
-              markersize=3,
-              #capsize=3,
-              linestyle='-',
-              label='Hard destinations')
-
-#for cap in caps:
-#        cap.set_markeredgewidth(1)
-        
-#(_, caps, _)=axes1[0].errorbar(x=range(max_tenure_scalar+1),y=deffect_b,yerr=derr_b,
-axes1[0].plot(range(max_tenure_scalar+1),deffect_b,
-              color=colors[1],
-              marker='s',
-              alpha=0.5,
-              markersize=3,
-              #capsize=3,
-              linewidth=1,
-              linestyle='-',
-              label='Easy destinations')
-
-#for cap in caps:
-#        cap.set_markeredgewidth(1)
+fig1,axes1=plt.subplots(1,1,figsize=(3.5,3.5),sharex=True,sharey=False)
 
 # conditional exit
 deffect_a = np.zeros(max_tenure_scalar+1)
@@ -294,48 +246,40 @@ for j in range(1,max_tenure_scalar+1):
         derr_a[j] = dreg_x_a.conf_int(alpha=0.05)[1]["C(tenure)[T.%d.0]"%j]-deffect_a[j]
         derr_b[j] = dreg_x_b.conf_int(alpha=0.05)[1]["C(tenure)[T.%d.0]"%j]-deffect_b[j]
                         
-axes1[1].set_title(labs[1],y=1.025)
-        
-#(_, caps, _)=axes1[1].errorbar(x=range(max_tenure_scalar+1),y=deffect_a,yerr=derr_a
-axes1[1].plot(range(max_tenure_scalar+1),deffect_a,
-              color=colors[0],
-              alpha=0.5,
-              marker='o',
-              linewidth=1,
-              markersize=3,
-              #capsize=3,
-              linestyle='-',
-              label='Hard destinations')
+axes1.set_title(labs[0],y=1.025)
+
+tenure = range(1,max_tenure_scalar+2)
+
+axes1.plot(tenure,deffect_a,
+           color=colors[0],
+           alpha=0.5,
+           marker='o',
+           linewidth=1,
+           markersize=3,
+           #capsize=3,
+           linestyle='-',
+           label='Hard destinations')
+
+axes1.plot(tenure,deffect_b,
+           color=colors[1],
+           marker='s',
+           alpha=0.5,
+           markersize=3,
+           #capsize=3,
+           linewidth=1,
+           linestyle='-',
+           label='Easy destinations')
 
 #for cap in caps:
 #        cap.set_markeredgewidth(1)
-        
-#(_, caps, _)=axes1[1].errorbar(x=range(max_tenure_scalar+1),y=deffect_b,yerr=derr_b,
-axes1[1].plot(range(max_tenure_scalar+1),deffect_b,
-              color=colors[1],
-              marker='s',
-              alpha=0.5,
-              markersize=3,
-              #capsize=3,
-              linewidth=1,
-              linestyle='-',
-              label='Easy destinations')
-
-#for cap in caps:
-#        cap.set_markeredgewidth(1)
 
         
-axes1[0].legend(loc='lower right',prop={'size':6})
-axes1[0].set_xticks(range(max_tenure_scalar+1))
-axes1[0].set_xlabel('Years since entry')
-axes1[1].set_xlabel('Years since entry')
-
-#note = 'Note: Blue circles show coefficients and 95\% confidence intervals estimated using data for destinations in the bottom 50\% in export participation\n("hard destinations"). Red circles show estimates for the top 10\% ("easy destinations"). Regression specifications include destination, industry, and\nyear fixed effects and controls for the number of months in which a firm exports to a given destination.'
-#axes1[0].annotate(xy=(0,-50),xytext=(0,0),xycoords='axes points',textcoords='offset points',s=note,size=6)
+axes1.legend(loc='upper right',prop={'size':6})
+axes1.set_xticks(range(1,max_tenure_scalar+2))
+axes1.set_xlabel('Years in market')
+axes1.set_xlabel('Years in market')
 
 fig1.subplots_adjust(hspace=0.2,wspace=0.2)
-
-plt.sca(axes1[0])
 plt.savefig(outpath + 'life_cycle_dyn_data_only.pdf',bbox_inches='tight')
 
 plt.close('all')
@@ -360,97 +304,6 @@ serr_a = np.zeros(max_tenure_scalar+1)
 serr_b = np.zeros(max_tenure_scalar+1)
 serr_c = np.zeros(max_tenure_scalar+1)
 
-# log exports
-# for j in range(1,max_tenure_scalar+1):
-#         dcoeff_a = dreg_v_a.params["C(tenure)[T.%d.0]"%j]
-#         dcoeff_b = dreg_v_b.params["C(tenure)[T.%d.0]"%j]
-
-#         deffect_a[j] = dcoeff_a
-#         deffect_b[j] = dcoeff_b
-
-#         derr_a[j] = dreg_v_a.conf_int(alpha=0.05)[1]["C(tenure)[T.%d.0]"%j]-deffect_a[j]
-#         derr_b[j] = dreg_v_b.conf_int(alpha=0.05)[1]["C(tenure)[T.%d.0]"%j]-deffect_b[j]
-
-
-#         scoeff_a = sreg_v_a.params["C(tenure)[T.%d]"%j]
-#         scoeff_b = sreg_v_b.params["C(tenure)[T.%d]"%j]
-
-#         seffect_a[j] = scoeff_a
-#         seffect_b[j] = scoeff_b
-
-#         serr_a[j] = sreg_v_a.conf_int(alpha=0.05)[1]["C(tenure)[T.%d]"%j]-seffect_a[j]
-#         serr_b[j] = sreg_v_b.conf_int(alpha=0.05)[1]["C(tenure)[T.%d]"%j]-seffect_b[j]
-
-                        
-# axes1[0].set_title(labs[0],y=1.025)
-        
-# lns=[]
-        
-# #(ln, caps, _)=axes1[0].errorbar(x=range(max_tenure_scalar+1),y=deffect_a,yerr=derr_a,
-# ln=axes1[0].plot(range(max_tenure_scalar+1),deffect_a,
-#                  color=colors[0],
-#                  alpha=0.5,
-#                  marker='o',
-#                  linewidth=1,
-#                  markersize=3,
-#                  #markeredgecolor=colors[0],
-#                  #capsize=3,
-#                  linestyle='-',
-#                  label='Hard destinations (data)')
-# lns.append(ln)
-# #for cap in caps:
-# #        cap.set_markeredgewidth(1)
-        
-# #(ln, caps, _)=axes1[0].errorbar(x=range(max_tenure_scalar+1),y=deffect_b,yerr=derr_b,
-# ln=axes1[0].plot(range(max_tenure_scalar+1),deffect_b,
-#                  color=colors[1],
-#                  marker='s',
-#                  alpha=0.5,
-#                  markersize=3,
-#                  #markeredgecolor=colors[1],
-#                 # capsize=3,
-#                  linewidth=1,
-#                  linestyle='-',
-#                  label='Easy destinations (data)')
-
-# lns.append(ln)
-# #for cap in caps:
-# #        cap.set_markeredgewidth(1)
-        
-# ax=axes1[0]
-
-# #(ln, caps, _)=ax.errorbar(x=range(max_tenure_scalar+1),y=seffect_a,yerr=serr_a,
-# ln=ax.plot(range(max_tenure_scalar+1),seffect_a,
-#            color=colors[2],
-#            alpha=0.5,
-#            marker='D',
-#            linewidth=1,
-#            markersize=3,
-#            #markeredgecolor=colors[0],
-#            #capsize=3,
-#            linestyle='-',
-#            label='Hard destinations (model)')
-# lns.append(ln)
-# #for cap in caps:
-# #        cap.set_markeredgewidth(1)
-#         #
-# #(ln, caps, _)=ax.errorbar(x=range(max_tenure_scalar+1),y=seffect_b,yerr=serr_b,
-# ln=ax.plot(range(max_tenure_scalar+1),seffect_b,
-#            color=colors[3],
-#            marker='^',
-#            alpha=0.5,
-#            markersize=3,
-#            #markeredgecolor=colors[1],
-#            #capsize=3,
-#            linewidth=1,
-#            linestyle='-',
-#            label='Easy destinations (model)')
-
-# lns.append(ln)
-# #for cap in caps:
-# #        cap.set_markeredgewidth(1)
-
-
 # conditional exit
 for j in range(1,max_tenure_scalar+1):
         dcoeff_a = dreg_x_a.params["C(tenure)[T.%d.0]"%j]
@@ -473,86 +326,65 @@ for j in range(1,max_tenure_scalar+1):
         serr_b[j] = sreg_x_b.conf_int(alpha=0.05)[1]["C(tenure)[T.%d]"%j]-seffect_b[j]
 
                         
-#axes1.set_title(labs[1],y=1.025)
         
 lns=[]
-        
-#(ln, caps, _)=axes1[1].errorbar(x=range(max_tenure_scalar+1),y=deffect_a,yerr=derr_a,
-ln=axes1.plot(range(max_tenure_scalar+1),deffect_a,
-                 color=colors[0],
-                 alpha=0.5,
-                 marker='o',
-                 linewidth=1,
-                 markersize=3,
-                 #markeredgecolor=colors[0],
-                 #capsize=3,
-                 linestyle='-',
-                 label='Hard destinations (data)')
+
+ln=axes1.plot(tenure,deffect_a,
+              color=colors[0],
+              alpha=0.5,
+              marker='o',
+              linewidth=1,
+              markersize=3,
+              #markeredgecolor=colors[0],
+              #capsize=3,
+              linestyle='-',
+              label='Hard destinations (data)')
 lns.append(ln)
-#for cap in caps:
-#        cap.set_markeredgewidth(1)
-        
-#(ln, caps, _)=axes1[1].errorbar(x=range(max_tenure_scalar+1),y=deffect_b,yerr=derr_b
-ln=axes1.plot(range(max_tenure_scalar+1),deffect_b,
-                 color=colors[1],
-                 marker='s',
-                 alpha=0.5,
-                 markersize=3,
-                 #markeredgecolor=colors[1],
-                 #capsize=3,
-                 linewidth=1,
-                 linestyle='-',
-                 label='Easy destinations (data)')
+
+ln=axes1.plot(tenure,deffect_b,
+              color=colors[1],
+              marker='s',
+              alpha=0.5,
+              markersize=3,
+              #markeredgecolor=colors[1],
+              #capsize=3,
+              linewidth=1,
+              linestyle='-',
+              label='Easy destinations (data)')
 
 lns.append(ln)
-#for cap in caps:
-#        cap.set_markeredgewidth(1)
-        
-ax=axes1
 
-#(ln, caps, _)=ax.errorbar(x=range(max_tenure_scalar+1),y=seffect_a,yerr=serr_a,
-ln=ax.plot(range(max_tenure_scalar+1),seffect_a,
-           color=colors[2],
-           alpha=0.5,
-           marker='D',
-           linewidth=1,
-           markersize=3,
-           #markeredgecolor=colors[0],
-           #capsize=3,
-           linestyle='-',
-           label='Hard destinations (model)')
+ln=axes1.plot(tenure,seffect_a,
+              color=colors[2],
+              alpha=0.5,
+              marker='D',
+              linewidth=1,
+              markersize=3,
+              #markeredgecolor=colors[0],
+              #capsize=3,
+              linestyle='-',
+              label='Hard destinations (model)')
 lns.append(ln)
-#for cap in caps:
-#        cap.set_markeredgewidth(1)
-        
-#(ln, caps, _)=ax.errorbar(x=range(max_tenure_scalar+1),y=seffect_b,yerr=serr_b,
-ln=ax.plot(range(max_tenure_scalar+1),seffect_b,
-           color=colors[3],
-           marker='^',
-           alpha=0.5,
-           markersize=3,
-           #markeredgecolor=colors[1],
-           #capsize=3,
-           linewidth=1,
-           linestyle='-',
-           label='Easy destinations (model)')
+
+ln=axes1.plot(tenure,seffect_b,
+              color=colors[3],
+              marker='^',
+              alpha=0.5,
+              markersize=3,
+              #markeredgecolor=colors[1],
+              #capsize=3,
+              linewidth=1,
+              linestyle='-',
+              label='Easy destinations (model)')
 
 lns.append(ln)
-#for cap in caps:
-#        cap.set_markeredgewidth(1)
-
         
 #labs = [l.get_label() for l in lns]
-axes1.legend(loc='lower right',prop={'size':6})
+axes1.legend(loc='upper right',prop={'size':6})
 
-#axes1[0].set_xlim(-0.5,4.5)
-axes1.set_xticks(range(max_tenure_scalar+1))
-axes1.set_ylabel(labs[1])
-axes1.set_xlabel('Years since entry')
-#axes1[1].set_xlabel('Years since entry')
-
-#note = 'Note: Blue circles show coefficients and 95\% confidence intervals estimated using data for destinations in the bottom 50\% in export participation\n("hard destinations"). Red circles show estimates for the top 10\% ("easy destinations"). Regression specification includes destination, year, and\nindustry fixed effects and controls for the number of months in which a firm exports to a given destination. Green and purple\nsquares show analogous results for simulated data generated by the model.'
-#axes1[0].annotate(xy=(0,-80),xytext=(0,0),xycoords='axes points',textcoords='offset points',s=note,size=6)
+axes1.set_xticks(range(1,max_tenure_scalar+2))
+axes1.set_ylabel(labs[0])
+axes1.set_xlabel('Years in market')
 
 fig1.subplots_adjust(hspace=0.2,wspace=0.2)
 
@@ -674,30 +506,28 @@ axes1[0].set_title('(a) Hard destinations',y=1.025)
 axes1[1].set_title('(b) Easy destinations',y=1.025)
 
 for k in range(1,max_tenure_scalar+1):
-        
-        #(_, caps, _)=axes1[0].errorbar(x=range(k+1),y=deffect_a[k,:k+1],yerr=derr_a[k,:k+1],
-        axes1[0].plot(range(k+1),deffect_a[k,:k+1],
-                      color=colors[k-1],
-                      alpha=0.5,
-                      marker='o',
-                      linewidth=1,
-                      markersize=3,
-                      #capsize=3,
-                      linestyle='-',
-                      label='Duration = %d'%k)
-        #for cap in caps:
-        #        cap.set_markeredgewidth(1)
-        
-        #(_, caps, _)=axes1[1].errorbar(x=range(k+1),y=deffect_b[k,:k+1],yerr=derr_b[k,:k+1],
-        axes1[1].plot(range(k+1),deffect_b[k,:k+1],
-                      color=colors[k-1],
-                      marker='o',
-                      alpha=0.5,
-                      markersize=3,
-                      #capsize=3,
-                      linewidth=1,
-                      linestyle='-',
-                      label='Duration = %d'%k)
+
+    tenure = [x+1 for x in range(k+1)]
+    
+    axes1[0].plot(tenure,deffect_a[k,:k+1],
+                  color=colors[k-1],
+                  alpha=0.5,
+                  marker='o',
+                  linewidth=1,
+                  markersize=3,
+                  #capsize=3,
+                  linestyle='-',
+                  label='Duration = %d'%(k+1))
+
+    axes1[1].plot(tenure,deffect_b[k,:k+1],
+                  color=colors[k-1],
+                  marker='o',
+                  alpha=0.5,
+                  markersize=3,
+                  #capsize=3,
+                  linewidth=1,
+                  linestyle='-',
+                  label='Duration = %d'%(k+1))
 
         #for cap in caps:
         #        cap.set_markeredgewidth(1)
@@ -705,16 +535,12 @@ for k in range(1,max_tenure_scalar+1):
 axes1[0].set_ylim(0,3)
 axes1[1].set_ylim(0,3)
 axes1[0].legend(loc='upper left',prop={'size':6})
-axes1[0].set_xticks(range(max_tenure_scalar+1))
-axes1[1].set_xticks(range(max_tenure_scalar+1))
-axes1[0].set_xlabel('Years since entry')
-axes1[1].set_xlabel('Years since entry')
-axes1[1].set_yticks([])
-axes1[0].set_ylabel('log exports (relative to duration = 0)')
-
-
-#note = 'Note: Blue circles show coefficients and 95\% confidence intervals estimated using data for destinations in the bottom 50\% in export participation\n("hard destinations"). Red circles show estimates for the top 10\% ("easy destinations"). Regression specifications include destination, industry, and\nyear fixed effects and controls for the number of months in which a firm exports to a given destination.'
-#axes1[0].annotate(xy=(0,-50),xytext=(0,0),xycoords='axes points',textcoords='offset points',s=note,size=6)
+axes1[0].set_xticks(range(1,max_tenure_scalar+2))
+axes1[1].set_xticks(range(1,max_tenure_scalar+2))
+axes1[0].set_xlabel('Years in market')
+axes1[1].set_xlabel('Years in market')
+#axes1[1].set_yticks([])
+axes1[0].set_ylabel('log exports (relative to duration = 1)')
 
 fig1.subplots_adjust(hspace=0.15,wspace=0.1)
 
@@ -734,79 +560,73 @@ axes1[1].set_title('(b) Easy destinations',y=1.025)
 lns=[]
 for k in range(1,max_tenure_scalar+1):
         
-        #(_, caps, _)=axes1[0].errorbar(x=range(k+1),y=deffect_a[k,:k+1],yerr=derr_a[k,:k+1],
-        l=axes1[0].plot(range(k+1),deffect_a[k,:k+1],
-                        color=colors[k-1],
-                        alpha=0.5,
-                        marker='o',
-                        linewidth=1,
-                        markersize=3,
-                        #capsize=3,
-                        linestyle='-',
-                        label='Duration = %d (data)'%k)
-        lns.append(l)
-        #for cap in caps:
-        #        cap.set_markeredgewidth(1)
-        
-        #(_, caps, _)=axes1[1].errorbar(x=range(k+1),y=deffect_b[k,:k+1],
-        l=axes1[1].plot(range(k+1),deffect_b[k,:k+1],
-                        color=colors[k-1],
-                        marker='o',
-                        alpha=0.5,
-                        markersize=3,
-                        #capsize=3,
-                        linewidth=1,
-                        linestyle='-',
-                        label='Duration = %d (data)'%k)
-        lns.append(l)
+    tenure = [x+1 for x in range(k+1)]
+    
+    l=axes1[0].plot(tenure,deffect_a[k,:k+1],
+                    color=colors[k-1],
+                    alpha=0.5,
+                    marker='o',
+                    linewidth=1,
+                    markersize=3,
+                    #capsize=3,
+                    linestyle='-',
+                    label='Duration = %d (data)'%(k+1))
+    lns.append(l)
+
+    l=axes1[1].plot(tenure,deffect_b[k,:k+1],
+                    color=colors[k-1],
+                    marker='o',
+                    alpha=0.5,
+                    markersize=3,
+                    #capsize=3,
+                    linewidth=1,
+                    linestyle='-',
+                    label='Duration = %d (data)'%(k+1))
+    lns.append(l)
         
 for k in range(1,max_tenure_scalar+1):
-        
-        l=axes1[0].plot(range(k+1),seffect_a[k,:k+1],
-                        color=colors[k-1],
-                        alpha=0.5,
-                        marker='s',
-                        linewidth=1,
-                        markersize=3,
-                        #capsize=3,
-                        linestyle='--',
-                        label='Duration = %d (model)'%k)
-        lns.append(l)
+
+    tenure = [x+1 for x in range(k+1)]
+    
+    l=axes1[0].plot(tenure,seffect_a[k,:k+1],
+                    color=colors[k-1],
+                    alpha=0.5,
+                    marker='s',
+                    linewidth=1,
+                    markersize=3,
+                    #capsize=3,
+                    linestyle='--',
+                    label='Duration = %d (model)'%(k+1))
+    lns.append(l)
 
 
-        l=axes1[1].plot(range(k+1),seffect_b[k,:k+1],
-                        color=colors[k-1],
-                        marker='s',
-                        alpha=0.5,
-                        markersize=3,
-                        #capsize=3,
-                        linewidth=1,
-                        linestyle='--',
-                        label='Duration = %d (model)'%k)
-        lns.append(l)
-        
-        #for cap in caps:
-        #        cap.set_markeredgewidth(1)
+    l=axes1[1].plot(tenure,seffect_b[k,:k+1],
+                    color=colors[k-1],
+                    marker='s',
+                    alpha=0.5,
+                    markersize=3,
+                    #capsize=3,
+                    linewidth=1,
+                    linestyle='--',
+                    label='Duration = %d (model)'%(k+1))
+    lns.append(l)
         
 
 tablelegend(axes1[0], ncol=2, loc='upper left',#bbox_to_anchor=(0.063,0.62), 
-            row_labels=['1', '2', '3', '4', '5'], 
+            row_labels=['2', '3', '4', '5', '6'], 
             col_labels=['Data','Model'], 
             title_label='Dur.')
 
-#axes1[0].legend(lns[0:5],labels=['' for x in range(5)],loc='upper left',prop={'size':6},ncol=1,title='Data')
-#axes1[0].legend(lns[5:],labels=['' for x in range(5)],loc='upper left',prop={'size':6},ncol=1,title='Model')
-axes1[0].set_xticks(range(max_tenure_scalar+1))
-axes1[1].set_xticks(range(max_tenure_scalar+1))
-axes1[0].set_xlabel('Years since entry')
-axes1[1].set_xlabel('Years since entry')
+
+axes1[0].set_xticks(range(1,max_tenure_scalar+2))
+axes1[1].set_xticks(range(1,max_tenure_scalar+2))
+axes1[0].set_xlabel('Years in market')
+axes1[1].set_xlabel('Years in market')
 axes1[0].set_ylim(-0.5,3)
 axes1[1].set_ylim(-0.5,3)
 #axes1[1].set_yticks([])
-axes1[0].set_ylabel('log exports (relative to duration = 0)')
+axes1[0].set_ylabel('log exports (relative to duration = 1)')
 
-#note = 'Note: Blue circles show coefficients and 95\% confidence intervals estimated using data for destinations in the bottom 50\% in export participation\n("hard destinations"). Red circles show estimates for the top 10\% ("easy destinations"). Regression specifications include destination, industry, and\nyear fixed effects and controls for the number of months in which a firm exports to a given destination.'
-#axes1[0].annotate(xy=(0,-50),xytext=(0,0),xycoords='axes points',textcoords='offset points',s=note,size=6)
 
 fig1.subplots_adjust(hspace=0.1,wspace=0.1)
 

@@ -39,15 +39,9 @@ if len(sys.argv)==1 or (len(sys.argv)>1 and sys.argv[1]=='dmp'):
 elif len(sys.argv)>1 and sys.argv[1]=='sunk':
     fname='sunkcost_microdata.csv'
     pref='sunkcost'
-elif len(sys.argv)>1 and sys.argv[1]=='sunk2':
-    fname='sunkcost2_microdata.csv'
-    pref='sunkcost2'
 elif len(sys.argv)>1 and sys.argv[1]=='acr':
     fname='acr_microdata.csv'
     pref='acr'
-elif len(sys.argv)>1 and sys.argv[1]=='acr2':
-    fname='acr2_microdata.csv'
-    pref='acr2'
 
 print('\tLoading simulated model microdata from '+fname)
 
@@ -231,9 +225,9 @@ def key_facts(df,industry=0):
     entrants = df[df.entry==1]
     incumbents = df[df.incumbent==1]
              
-    icols = ['c','d','y','popt','gdppc','tau']
+    icols = ['d','y','popt','gdppc','tau']
     if industry==1:
-        icols = ['c','d','y','industry','maquiladora','popt','gdppc','tau']
+        icols = ['d','y','industry','maquiladora','popt','gdppc','tau']
         
     agg = reset_multiindex(df.groupby(icols).agg(agg_fns).reset_index(),
                            len(icols),
@@ -267,11 +261,9 @@ def key_facts(df,industry=0):
 
     return agg
 
-agged['c']='BRA'
-
 agg_by_d_s = key_facts(agged,0)
 
-agg_by_d2_s = agg_by_d_s.groupby(['c','d']).mean().reset_index()
+agg_by_d2_s = agg_by_d_s.groupby('d').mean().reset_index()
 
 agg_by_d_s.to_pickle(outpath + pref+ '_microdata_agg_by_d.pik')
 agg_by_d2_s.to_pickle(outpath + pref +'_microdata_agg_by_d2.pik')

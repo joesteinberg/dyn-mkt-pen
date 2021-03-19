@@ -15,14 +15,15 @@ from matplotlib.lines import Line2D
 from matplotlib.ticker import MultipleLocator
 
 mpl.rc('text', usetex=True)
-mpl.rc('savefig',bbox='tight')
+#mpl.rc('savefig',bbox_inches='tight')
 mpl.rc('savefig',format='pdf')
 mpl.rc('font',**{'family':'serif','serif':['Palatino'],'size':8})
 mpl.rc('font',size=8)
 mpl.rc('lines',linewidth=1)
 
 alpha=0.8
-colors=['#377eb8','#e41a1c','#4daf4a','#984ea3']
+colors=['#377eb8','#e41a1c','#4daf4a','#984ea3','#ff7f00','#ffff33']
+fmts = ['o','s','x','d','p']
 
 def pct_chg(x):
         return 100*(x/x.iloc[0]-1.0)
@@ -35,12 +36,15 @@ def load_tr_dyn(fname,calc_grps):
         global grps
         df = pd.read_csv(fname,sep=',')
 
+        df['n0'] = df.groupby('d')['expart_rate'].transform(lambda x:x.min())
+        df = df[df.n0>0.004].reset_index(drop=True)
+
         if(calc_grps):
                 tmp = df.loc[df.t==0,:]
                 p90 = tmp['expart_rate'].quantile(0.9)
                 p50 = tmp['expart_rate'].quantile(0.5)
                 tmp['grp'] = np.nan
-                tmp.loc[tmp.expart_rate<p50,'grp']=0
+                tmp.loc[tmp.expart_rate<=p50,'grp']=0
                 tmp.loc[tmp.expart_rate>p90,'grp']=1
                 grps=tmp
                 
@@ -86,28 +90,12 @@ if len(sys.argv)>1 and sys.argv[1]=='sunk':
                 '../c/output/tr_dyn_rer_dep_sunkcost.csv',
                 '../c/output/tr_dyn_perm_tau_drop_uncertain_sunkcost.csv']
 
-elif len(sys.argv)>1 and sys.argv[1]=='sunk2':
-        pref='sunkcost2'
-        altlab='sunk cost v2'
-        fnames=['../c/output/tr_dyn_perm_tau_drop_sunkcost2.csv',
-                '../c/output/tr_dyn_rer_dep_sunkcost2.csv',
-                '../c/output/tr_dyn_perm_tau_drop_uncertain_sunkcost2.csv']
-
 elif len(sys.argv)>1 and sys.argv[1]=='acr':
         pref='acr'
         altlab='exog. entrant dyn.'
         fnames=['../c/output/tr_dyn_perm_tau_drop_acr.csv',
                 '../c/output/tr_dyn_rer_dep_acr.csv',
                 '../c/output/tr_dyn_perm_tau_drop_uncertain_acr.csv']
-
-elif len(sys.argv)>1 and sys.argv[1]=='acr2':
-        pref='acr2'
-        altlab='exog. entrant dyn. v2'
-        fnames=['../c/output/tr_dyn_perm_tau_drop_acr2.csv',
-                '../c/output/tr_dyn_rer_dep_acr2.csv',
-                '../c/output/tr_dyn_perm_tau_drop_uncertain_acr2.csv']
-
-
         
 if pref!='':
         G2=[]
@@ -130,14 +118,14 @@ for i in range(3):
         
         axes[i].plot(g[g.grp==0][c].reset_index(drop=True),
                      color=colors[0],
-                     marker='o',
+                     marker=fmts[0],
                      alpha=0.75,
                      markeredgewidth=0,
                      label=r'Hard dests.')
         
         axes[i].plot(g[g.grp==1][c].reset_index(drop=True),
                      color=colors[1],
-                     marker='s',
+                     marker=fmts[1],
                      alpha=0.75,
                      markeredgewidth=0,
                      label=r'Easy dests.')
@@ -155,10 +143,10 @@ axes[1].set_xticklabels([('%d'%t if t%2==0 else '') for t in range(11)])
 
 
 ann1=axes[0].annotate(xy=(55,150),xytext=(0,0),xycoords='axes points',textcoords='offset points',s=r"Avg. of hard dests.",size=6)
-ann2=axes[0].annotate(xy=(43,89),xytext=(0,0),xycoords='axes points',textcoords='offset points',s=r"Avg. of easy dests.",size=6)
+ann2=axes[0].annotate(xy=(43,102),xytext=(0,0),xycoords='axes points',textcoords='offset points',s=r"Avg. of easy dests.",size=6)
 
 fig.subplots_adjust(hspace=0.2,wspace=0.25)
-plt.savefig('output/tr_dyn_perm_tau_drop.pdf',bbox='tight')
+plt.savefig('output/tr_dyn_perm_tau_drop.pdf',bbox_inches='tight')
 
 
 if pref !='':
@@ -169,16 +157,16 @@ if pref !='':
                 axes[i].axhline(0,linestyle=':',color='black',alpha=0.5)
         
                 axes[i].plot(g[g.grp==0][c].reset_index(drop=True),
-                             color=colors[2],
-                             marker='x',
+                             color=colors[3],
+                             marker=fmts[3],
                              alpha=0.75,
                              markeredgewidth=1,
                              linestyle='--',
                              label=r'Hard dests. ('+altlab+')')
                 
                 axes[i].plot(g[g.grp==1][c].reset_index(drop=True),
-                             color=colors[3],
-                             marker='+',
+                             color=colors[4],
+                             marker=fmts[4],
                              alpha=0.75,
                              markeredgewidth=1,
                              linestyle='--',
@@ -193,7 +181,7 @@ if pref !='':
         ann2.remove()
         axes[2].legend(loc='lower right',prop={'size':6})
         fig.subplots_adjust(hspace=0.2,wspace=0.25)
-        plt.savefig('output/tr_dyn_perm_tau_drop_'+pref+'.pdf',bbox='tight')
+        plt.savefig('output/tr_dyn_perm_tau_drop_'+pref+'.pdf',bbox_inches='tight')
         plt.close('all')
 
 
@@ -213,19 +201,29 @@ for i in range(3):
 
         axes[i].axhline(0,linestyle=':',color='black',alpha=0.5)
         
-        axes[i].plot(g[g.grp==0][c].reset_index(drop=True),
-                     color=colors[0],
-                     marker='o',
-                     alpha=0.75,
-                     markeredgewidth=0,
-                     label=r'Hard dests.')
+        ln1=axes[i].plot(g[g.grp==0][c].reset_index(drop=True),
+                         color=colors[0],
+                         marker=fmts[0],
+                         alpha=0.75,
+                         markeredgewidth=0,
+                         label=r'Avg. of hard dests.')
 
-        axes[i].plot(g[g.grp==1][c].reset_index(drop=True),
-                     color=colors[1],
-                     marker='s',
-                     alpha=0.75,
-                     markeredgewidth=0,
-                     label=r'Easy dests.')
+        ln2=axes[i].plot(g[g.grp==1][c].reset_index(drop=True),
+                         color=colors[1],
+                         marker=fmts[1],
+                         alpha=0.75,
+                         markeredgewidth=0,
+                         label=r'Avg. of easy dests.')
+
+        ax2 = axes[i].twinx()
+        ax2.set_ylim(0,9)
+        ln3=ax2.plot(-g[g.grp==1]['tau_pct_chg'].reset_index(drop=True),
+                      color=colors[2],
+                      marker=fmts[2],
+                      alpha=0.75,
+                      markeredgewidth=1,
+                      label=r'RER (right axis)')
+        
 
         axes[i].set_title(titles[i],y=1.03)
         
@@ -236,12 +234,13 @@ axes[1].set_xlim(0,10)
 axes[1].set_xlabel('Years since policy change')
 axes[1].set_xticks(range(11))
 axes[1].set_xticklabels([('%d'%t if t%2==0 else '') for t in range(11)])
+#axes[1].legend(prop={'size':6},loc='lower right')
+ann1=axes[2].annotate(xy=(47,150),xytext=(0,0),xycoords='axes points',textcoords='offset points',s=r"Avg. of hard dests.",size=6)
+ann2=axes[2].annotate(xy=(35,35),xytext=(0,0),xycoords='axes points',textcoords='offset points',s=r"Avg. of easy dests.",size=6)
+ann3=axes[2].annotate(xy=(28,80),xytext=(0,0),xycoords='axes points',textcoords='offset points',s=r"RER (right axis)",size=6)
 
-ann1=axes[0].annotate(xy=(22,140),xytext=(0,0),xycoords='axes points',textcoords='offset points',s=r"Avg. of hard dests.",size=6)
-ann2=axes[0].annotate(xy=(48,20),xytext=(0,0),xycoords='axes points',textcoords='offset points',s=r"Avg. of easy dests.",size=6)
-
-fig.subplots_adjust(hspace=0.2,wspace=0.25)
-plt.savefig('output/tr_dyn_rer_dep.pdf',bbox='tight')
+fig.subplots_adjust(hspace=0.2,wspace=0.35)
+plt.savefig('output/tr_dyn_rer_dep.pdf',bbox_inches='tight')
 
 
 
@@ -252,29 +251,33 @@ if pref!='':
 
                 axes[i].axhline(0,linestyle=':',color='black',alpha=0.5)
         
-                axes[i].plot(g[g.grp==0][c].reset_index(drop=True),
-                             color=colors[2],
-                             marker='x',
-                             alpha=0.75,
-                             markeredgewidth=1,
-                             linestyle='--',
-                             label=r'Hard dests. ('+altlab+')')
+                ln4=axes[i].plot(g[g.grp==0][c].reset_index(drop=True),
+                                 color=colors[3],
+                                 marker=fmts[2],
+                                 alpha=0.75,
+                                 markeredgewidth=1,
+                                 linestyle='--',
+                                 label=r'Hard dests. ('+altlab+')')
 
-                axes[i].plot(g[g.grp==1][c].reset_index(drop=True),
-                             color=colors[3],
-                             marker='+',
-                             alpha=0.75,
-                             markeredgewidth=1,
-                             linestyle='--',
-                             label=r'Easy dests. ('+altlab+')')
+                ln5=axes[i].plot(g[g.grp==1][c].reset_index(drop=True),
+                                 color=colors[4],
+                                 marker=fmts[4],
+                                 alpha=0.75,
+                                 markeredgewidth=1,
+                                 linestyle='--',
+                                 label=r'Easy dests. ('+altlab+')')
 
    
         ann1.remove()
         ann2.remove()
-        axes[0].legend(loc='best',prop={'size':6})
+        ann3.remove()
 
-fig.subplots_adjust(hspace=0.2,wspace=0.25)
-plt.savefig('output/tr_dyn_rer_dep_'+pref+'.pdf',bbox='tight')
+        lns = ln1+ln2+ln3+ln4+ln5
+        labs = [l.get_label() for l in lns]
+        axes[0].legend(lns,labs,loc='best',prop={'size':6})
+
+        fig.subplots_adjust(hspace=0.2,wspace=0.35)
+        plt.savefig('output/tr_dyn_rer_dep_'+pref+'.pdf',bbox_inches='tight')
 
 
 
@@ -298,14 +301,14 @@ for i in range(3):
         
         axes[i].plot(g[g.grp==0][c].reset_index(drop=True),
                      color=colors[0],
-                     marker='o',
+                     marker=fmts[0],
                      alpha=0.75,
                      markeredgewidth=0,
                      label=r'Avg. of hard dests.')
         
         axes[i].plot(g[g.grp==1][c].reset_index(drop=True),
                      color=colors[1],
-                     marker='s',
+                     marker=fmts[1],
                      alpha=0.75,
                      markeredgewidth=0,
                      label=r'Avg. of easy dests.')
@@ -314,14 +317,14 @@ for i in range(3):
         
         axes[i].plot(g[g.grp==0][c].reset_index(drop=True),
                      color=colors[2],
-                     marker='x',
+                     marker=fmts[2],
                      alpha=0.75,
                      markeredgewidth=1,
                      label=r'Avg. of hard dests. (uncertain)')
         
         axes[i].plot(g[g.grp==1][c].reset_index(drop=True),
                      color=colors[3],
-                     marker='+',
+                     marker=fmts[3],
                      alpha=0.75,
                      markeredgewidth=1,
                      label=r'Avg. of easy dests. (uncertain)')
@@ -346,7 +349,7 @@ ann3=axes[0].annotate(xy=(30,118),xytext=(0,0),xycoords='axes points',textcoords
 ann4=axes[0].annotate(xy=(30,72),xytext=(0,0),xycoords='axes points',textcoords='offset points',s=r"Avg. of easy dests. (uncertain)",size=6)
 
 fig.subplots_adjust(hspace=0.2,wspace=0.25)
-plt.savefig('output/tr_dyn_perm_tau_drop_uncertain.pdf',bbox='tight')
+plt.savefig('output/tr_dyn_perm_tau_drop_uncertain.pdf',bbox_inches='tight')
 
 plt.close('all')
 
@@ -367,14 +370,14 @@ if pref!='':
         
                 axes[i].plot(g[g.grp==0][c].reset_index(drop=True),
                              color=colors[0],
-                             marker='o',
+                             marker=fmts[0],
                              alpha=0.75,
                              markeredgewidth=0,
                              label=r'Avg. of hard dests.')
         
                 axes[i].plot(g[g.grp==1][c].reset_index(drop=True),
                              color=colors[1],
-                             marker='s',
+                             marker=fmts[1],
                              alpha=0.75,
                              markeredgewidth=0,
                              label=r'Avg. of easy dests.')
@@ -383,14 +386,14 @@ if pref!='':
         
                 axes[i].plot(g[g.grp==0][c].reset_index(drop=True),
                              color=colors[2],
-                             marker='x',
+                             marker=fmts[2],
                              alpha=0.75,
                              markeredgewidth=1,
                              label=r'Avg. of hard dests. (uncertain)')
         
                 axes[i].plot(g[g.grp==1][c].reset_index(drop=True),
                              color=colors[3],
-                             marker='+',
+                             marker=fmts[3],
                              alpha=0.75,
                              markeredgewidth=1,
                              label=r'Avg. of easy dests. (uncertain)')
@@ -409,6 +412,6 @@ if pref!='':
 
 
         fig.subplots_adjust(hspace=0.2,wspace=0.25)
-        plt.savefig('output/tr_dyn_perm_tau_drop_uncertain_'+pref+'.pdf',bbox='tight')
+        plt.savefig('output/tr_dyn_perm_tau_drop_uncertain_'+pref+'.pdf',bbox_inches='tight')
 
         plt.close('all')

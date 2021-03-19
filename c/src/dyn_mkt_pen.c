@@ -1,4 +1,4 @@
-///////////////////////////////////////////////////////////////////////////////
+/////////////////////////////////////////////////////////////////////////////
 // DYN_MKT_PEN.C
 // Joseph B. Steinberg, University of Toronto
 //
@@ -28,9 +28,9 @@
 // and run the program, simply type "make" followed by "./dyn_mkt_pen".
 
 
-///////////////////////////////////////////////////////////////////////////////
+/////////////////////////////////////////////////////////////////////////////
 // 1. Includes, macros, etc.
-///////////////////////////////////////////////////////////////////////////////
+/////////////////////////////////////////////////////////////////////////////
 
 // includes
 #include <unistd.h>
@@ -728,15 +728,26 @@ void discretize_x(int pareto)
     }
 
   for(int i=0; i<NX; i++)
-    {
-      x_trans_probs[i][i]=1.0;
-
+    {      
       double sum2=0.0;
       for(int j=0; j<NX; j++)
-	{	  
+	{
+	  if(i==j)
+	    {
+	      x_trans_probs[i][j] = rho_x + (1.0-rho_x)*x_ucond_probs[j];
+	    }
+	  else
+	    {
+	      x_trans_probs[i][j] = (1.0-rho_x)*x_ucond_probs[j];
+	    }
+	  
 	  sum2 += x_trans_probs[i][j];
 	  x_trans_cumprobs[i][j] = sum2;
 	}
+      
+      if(fabs(sum2-1.0)>1.0e-8)
+	printf("X trans probs dont sum to 1!! %0.8f\n",sum2);
+
     }
 
   /*int n = NX;
@@ -2292,7 +2303,7 @@ int stat_dist(int id)
 int stat_dist_all_dests()
 {
   if(verbose)
-    printf("Solving stationary distribtions for all destinations...\n");
+    printf("Solving stationary distributions for all destinations...\n");
 
   int error=0;
   
@@ -2486,31 +2497,65 @@ int tr_dyn_perm_tau_chg_uncertain(int id, double chg)
       return 1;
     }
 
-  // now copy expected continuation value (50% chance of keeping new trade costs, 50% chance of going back)
-  for(int ix=0; ix<NX; ix++)
+  // converge on new policy function with permanent trade policy uncertainty
+  int status = 0;
+  double maxdiff = 999;
+  int imaxdiff[3] = {0};
+  
+  int iter=0;
+  do
     {
-      for(int iz=0; iz<NZ; iz++)
+      iter++;
+
+      // copy expected continuation value (50% chance of keeping new trade costs, 50% chance of going back)
+      for(int ix=0; ix<NX; ix++)
 	{
-	  for(int im=0; im<NM; im++)
+	  for(int iz=0; iz<NZ; iz++)
 	    {
-	      dV[id][ix][iz][im] = 0.5*dV[id][ix][iz][im] + 0.5*tmp_dV[id][ix][iz][im];
+	      for(int im=0; im<NM; im++)
+		{
+		  dV[id][ix][iz][im] = 0.5*dV[id][ix][iz][im] + 0.5*tmp_dV[id][ix][iz][im];
+		}
 	    }
+	}      
+      
+      calc_EdV(id);
+      
+      status = iterate_entrant_policy(id);
+      if(status)
+	{
+	  printf("\tError iterating entrant policy function! id = %d\n",id);
+	  break;
+	}
+      
+      status = iterate_incumbent_policy(id,&maxdiff,imaxdiff);
+      if(status)
+	{
+	  printf("\tError iterating incumbent policy function! id = %d\n",id);
+	  break;
+	}
+      
+      if(verbose==4)
+	{
+	  printf("\t\tIter %d, diff = %0.2g, loc = (%d, %d, %d), gm[loc] = %0.4g\n",
+		 iter,maxdiff,imaxdiff[0],imaxdiff[1],imaxdiff[2],
+		 gm[id][imaxdiff[0]][imaxdiff[1]][imaxdiff[2]]);
 	}
     }
+  while(maxdiff>policy_tol_abs && iter < policy_max_iter);
 
-  // now iterate once more on policy function to find new policies
-  if(iterate_entrant_policy(id))
+  if(iter==policy_max_iter)
     {
-      printf("\tError iterating entrant policy function! id = %d\n",id);
-      return 1;
+      status = 1;
+      if(verbose>=3)
+	printf("\tPolicy function iteration failed for %.3s! Diff = %0.4g\n",name[id],maxdiff);
     }
-
-  double junk1=0;
-  int junk2[3];
-  if(iterate_incumbent_policy(id,&junk1,junk2))
+  else
     {
-      printf("\tError iterating incumbent policy function! id = %d\n",id);
-      return 1;
+      if(verbose>=3)
+	{
+	  printf("\tPolicy function converged for %.3s\n",name[id]);
+	}
     }
   
   int t;
@@ -2528,7 +2573,7 @@ int tr_dyn_perm_tau_chg_uncertain(int id, double chg)
       if(update_dist(id, tmp_dist2[id], &junk, &junk2, &junk3, &junk4))
 	{
 	  printf("Error updating distribution!\n");
-	  return 1;
+	  status = 1;
 	}
       memcpy(dist[id],tmp_dist2[id],NX*NZ*NM*sizeof(double));
     }
@@ -2543,7 +2588,7 @@ int tr_dyn_perm_tau_chg_uncertain(int id, double chg)
   if(verbose==3)
     printf("\tTransition dynamics complete for id=%id!\n",id);
   
-  return 0;
+  return status;
 }
 
 int tr_dyn_perm_tau_chg_uncertain_all_dests(double chg)
@@ -3413,7 +3458,7 @@ int main(int argc, char * argv[])
       // effects of temporary good depreciation
       double shock = log(1.0+(theta-1.0)/10.0)/(theta-1.0);
       linebreak();
-      if(tr_dyn_rer_shock_all_dests(shock,0.75))
+      if(tr_dyn_rer_shock_all_dests(shock,0.9))
 	return 1;
       if(write_tr_dyn_results("output/tr_dyn_rer_dep.csv"))
 	return 1;
