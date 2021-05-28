@@ -157,6 +157,40 @@ df2.loc[df2.tenure>max_tenure_scalar,'tenure']=max_tenure_scalar
 df2.loc[df2.max_tenure>max_tenure_scalar,'max_tenure']=max_tenure_scalar
 df2s = df2[df2.max_tenure>=max_tenure_scalar].reset_index(drop=True)
 
+df2_alt = None
+df2s_alt = None
+pref=''
+altlab=''
+
+if len(sys.argv)>1 and sys.argv[1]=='sunk':
+        pref='_sunkcost'
+        altlab='Sunk cost'
+        df2_alt = pd.read_pickle('output/sunkcost_microdata_processed.pik')
+
+elif len(sys.argv)>1 and sys.argv[1]=='acr':
+        pref='_acr'
+        altlab='Exog. entrant dyn.'
+        df2_alt = pd.read_pickle('output/acr_microdata_processed.pik')
+
+elif len(sys.argv)>1 and sys.argv[1]=='smp':
+        pref='_smp'
+        altlab='Static mkt. pen.'
+        df2_alt = pd.read_pickle('output/smp_microdata_processed.pik')
+
+if pref!='':
+    df2_alt['nf'] = df2_alt.groupby(['d','y'])['f'].transform(lambda x: x.nunique())
+    tmp2 = df2_alt.groupby('d')['nf'].mean().reset_index()
+    p50 = tmp2.nf.quantile(0.5)
+    p90 = tmp2.nf.quantile(0.90)               
+    df2_alt['grp'] = np.nan
+    df2_alt.loc[df2_alt.nf<p50,'grp']=0
+    df2_alt.loc[df2_alt.nf>p90,'grp']=1
+    df2_alt=df2_alt[df2_alt.tenure.notnull()].reset_index(drop=True)
+    df2_alt.loc[df2_alt.tenure>max_tenure_scalar,'tenure']=max_tenure_scalar
+    df2_alt.loc[df2_alt.max_tenure>max_tenure_scalar,'max_tenure']=max_tenure_scalar
+    df2s_alt = df2_alt[df2_alt.max_tenure>=max_tenure_scalar].reset_index(drop=True)
+    
+
 #############################################################################
 
 print('\tEstimating tenure effect regressions on actual data...')
@@ -182,8 +216,18 @@ sreg_x_a = ols(formula=f2,data=df2[df2.grp==0]).fit(cov_type='HC0')
 sreg_x_b = ols(formula=f2,data=df2[df2.grp==1]).fit(cov_type='HC0')
 sreg_x = ols(formula=f2,data=df2).fit(cov_type='HC0')
 
+sreg2_x_a = None
+sreg2_x_b = None
+sreg_x = None
+
+if pref!='':
+    sreg2_x_a = ols(formula=f2,data=df2_alt[df2_alt.grp==0]).fit(cov_type='HC0')
+    sreg2_x_b = ols(formula=f2,data=df2_alt[df2_alt.grp==1]).fit(cov_type='HC0')
+    sreg2_x = ols(formula=f2,data=df2_alt).fit(cov_type='HC0')
+    
+
 caldata = np.genfromtxt(outpath + "calibration_data.txt",delimiter=" ")
-assert (caldata.shape == (3,6+18)), 'Error! Calibration data file wrong size! Run sumstats first!'
+assert (caldata.shape == (3,3+10)), 'Error! Calibration data file wrong size! Run sumstats first!'
     
 caldata2 = np.zeros((3,10+40))
 
@@ -222,6 +266,8 @@ caldata2[1][6] = sreg_x_b.params['C(tenure)[T.2]']
 caldata2[1][7] = sreg_x_b.params['C(tenure)[T.3]']
 caldata2[1][8] = sreg_x_b.params['C(tenure)[T.4]']
 caldata2[1][9] = sreg_x_b.params['C(tenure)[T.5]']
+
+caldata2[2][0:10] = 10000*caldata2[2][0:10]
 
 #############################################################################
         
@@ -287,9 +333,6 @@ plt.close('all')
 
 ####-----------
 
-fig1,axes1=plt.subplots(1,1,figsize=(3.5,3.5),sharex=True,sharey=False)
-lns=[]
-
 deffect_a = np.zeros(max_tenure_scalar+1)
 deffect_b = np.zeros(max_tenure_scalar+1)
 deffect_c = np.zeros(max_tenure_scalar+1)
@@ -303,6 +346,13 @@ seffect_c = np.zeros(max_tenure_scalar+1)
 serr_a = np.zeros(max_tenure_scalar+1)
 serr_b = np.zeros(max_tenure_scalar+1)
 serr_c = np.zeros(max_tenure_scalar+1)
+
+seffect2_a = np.zeros(max_tenure_scalar+1)
+seffect2_b = np.zeros(max_tenure_scalar+1)
+seffect2_c = np.zeros(max_tenure_scalar+1)
+serr2_a = np.zeros(max_tenure_scalar+1)
+serr2_b = np.zeros(max_tenure_scalar+1)
+serr2_c = np.zeros(max_tenure_scalar+1)
 
 # conditional exit
 for j in range(1,max_tenure_scalar+1):
@@ -325,8 +375,19 @@ for j in range(1,max_tenure_scalar+1):
         serr_a[j] = sreg_x_a.conf_int(alpha=0.05)[1]["C(tenure)[T.%d]"%j]-seffect_a[j]
         serr_b[j] = sreg_x_b.conf_int(alpha=0.05)[1]["C(tenure)[T.%d]"%j]-seffect_b[j]
 
+        if pref!='':
+            scoeff2_a = sreg2_x_a.params["C(tenure)[T.%d]"%j]
+            scoeff2_b = sreg2_x_b.params["C(tenure)[T.%d]"%j]
+
+            seffect2_a[j] = scoeff2_a
+            seffect2_b[j] = scoeff2_b
+
+            serr2_a[j] = sreg2_x_a.conf_int(alpha=0.05)[1]["C(tenure)[T.%d]"%j]-seffect_a[j]
+            serr2_b[j] = sreg2_x_b.conf_int(alpha=0.05)[1]["C(tenure)[T.%d]"%j]-seffect_b[j]
+
+            
                         
-        
+fig1,axes1=plt.subplots(1,1,figsize=(3.5,3.5),sharex=True,sharey=False)
 lns=[]
 
 ln=axes1.plot(tenure,deffect_a,
@@ -394,6 +455,81 @@ plt.savefig(outpath + 'life_cycle_dyn_model_vs_data.pdf',bbox_inches='tight')
 plt.close('all')
 
 
+
+
+
+if pref!='':
+    fig1,axes1=plt.subplots(1,1,figsize=(3.5,3.5),sharex=True,sharey=False)
+    lns=[]
+
+    ln=axes1.plot(tenure,seffect_a,
+                  color=colors[0],
+                  alpha=0.5,
+                  marker='o',
+                  linewidth=1,
+                  markersize=3,
+                  #markeredgecolor=colors[0],
+                  #capsize=3,
+                  linestyle='-',
+                  label='Hard destinations (baseline)')
+    lns.append(ln)
+
+    ln=axes1.plot(tenure,seffect_b,
+                  color=colors[1],
+                  marker='s',
+                  alpha=0.5,
+                  markersize=3,
+                  #markeredgecolor=colors[1],
+                  #capsize=3,
+                  linewidth=1,
+                  linestyle='-',
+                  label='Easy destinations (baseline)')
+
+    lns.append(ln)
+
+    ln=axes1.plot(tenure,seffect2_a,
+                  color=colors[2],
+                  alpha=0.5,
+                  marker='D',
+                  linewidth=1,
+                  markersize=3,
+                  #markeredgecolor=colors[0],
+                  #capsize=3,
+                  linestyle='-',
+                  label='Hard destinations (%s)'%altlab)
+    lns.append(ln)
+
+    ln=axes1.plot(tenure,seffect2_b,
+                  color=colors[3],
+                  marker='^',
+                  alpha=0.5,
+                  markersize=3,
+                  #markeredgecolor=colors[1],
+                  #capsize=3,
+                  linewidth=1,
+                  linestyle='-',
+                  label='Easy destinations (%s)'%altlab)
+
+    lns.append(ln)
+        
+    #labs = [l.get_label() for l in lns]
+    axes1.legend(loc='upper right',prop={'size':6})
+    
+    axes1.set_xticks(range(1,max_tenure_scalar+2))
+    axes1.set_ylabel(labs[0])
+    axes1.set_xlabel('Years in market')
+
+    fig1.subplots_adjust(hspace=0.2,wspace=0.2)
+
+    #plt.sca(axes1[0])
+    plt.savefig(outpath + 'life_cycle_dyn'+pref+'.pdf',bbox_inches='tight')
+
+plt.close('all')
+
+
+
+
+
 #############################################################################
 
 print('\tEstimating duration-tenure effect regressions on actual data...')
@@ -427,6 +563,22 @@ for c in X.columns:
                 X.drop(c,axis=1,inplace=True)
 sreg_v_b = OLS(y,X).fit(cov_type='HC0')
 
+sreg2_v_a = None
+sreg2_v_b = None
+
+if pref!='':
+    y,X = patsy.dmatrices(f1, df2_alt[df2_alt.grp==0], return_type='dataframe')
+    for c in X.columns:
+        if(X[c].sum()<1.0e-10):
+            X.drop(c,axis=1,inplace=True)
+    sreg2_v_a = OLS(y,X).fit(cov_type='HC0')
+
+    y,X = patsy.dmatrices(f1, df2_alt[df2_alt.grp==1], return_type='dataframe')
+    for c in X.columns:
+        if(X[c].sum()<1.0e-10):
+            X.drop(c,axis=1,inplace=True)
+    sreg2_v_b = OLS(y,X).fit(cov_type='HC0')
+
 
 deffect_a = np.zeros((max_tenure_scalar+1,max_tenure_scalar+1))
 deffect_b = np.zeros((max_tenure_scalar+1,max_tenure_scalar+1))
@@ -438,6 +590,10 @@ seffect_a = np.zeros((max_tenure_scalar+1,max_tenure_scalar+1))
 seffect_b = np.zeros((max_tenure_scalar+1,max_tenure_scalar+1))
 serr_a = np.zeros((max_tenure_scalar+1,max_tenure_scalar+1))
 serr_b = np.zeros((max_tenure_scalar+1,max_tenure_scalar+1))
+seffect2_a = np.zeros((max_tenure_scalar+1,max_tenure_scalar+1))
+seffect2_b = np.zeros((max_tenure_scalar+1,max_tenure_scalar+1))
+serr2_a = np.zeros((max_tenure_scalar+1,max_tenure_scalar+1))
+serr2_b = np.zeros((max_tenure_scalar+1,max_tenure_scalar+1))
 
 
 for k in range(1,max_tenure_scalar+1):
@@ -458,6 +614,15 @@ for k in range(1,max_tenure_scalar+1):
                 serr_a[k,j] = sreg_v_a.conf_int(alpha=0.05)[1]["C(max_tenure)[T.%d]"%(k)]
                 serr_b[k,j] = sreg_v_b.conf_int(alpha=0.05)[1]["C(max_tenure)[T.%d]"%(k)]
 
+
+                if pref!='':
+                    seffect2_a[k,j] = sreg2_v_a.params["C(max_tenure)[T.%d]"%(k)]
+                    seffect2_b[k,j] = sreg2_v_b.params["C(max_tenure)[T.%d]"%(k)]
+                
+                    serr2_a[k,j] = sreg2_v_a.conf_int(alpha=0.05)[1]["C(max_tenure)[T.%d]"%(k)]
+                    serr2_b[k,j] = sreg2_v_b.conf_int(alpha=0.05)[1]["C(max_tenure)[T.%d]"%(k)]
+
+                    
                 if(j>0):
                         deffect_a[k,j] += dreg_v_a.params["C(tenure)[T.%d.0]:C(max_tenure)[%d.0]"%(j,k)]
                         deffect_b[k,j] += dreg_v_b.params["C(tenure)[T.%d.0]:C(max_tenure)[%d.0]"%(j,k)]
@@ -474,12 +639,26 @@ for k in range(1,max_tenure_scalar+1):
                         serr_a[k,j] += sreg_v_a.conf_int(alpha=0.05)[1]["C(tenure)[T.%d]:C(max_tenure)[%d]"%(j,k)]
                         serr_b[k,j] += sreg_v_b.conf_int(alpha=0.05)[1]["C(tenure)[T.%d]:C(max_tenure)[%d]"%(j,k)]
 
+
+                        if pref!='':
+                            seffect2_a[k,j] += sreg2_v_a.params["C(tenure)[T.%d]:C(max_tenure)[%d]"%(j,k)]
+                            seffect2_b[k,j] += sreg2_v_b.params["C(tenure)[T.%d]:C(max_tenure)[%d]"%(j,k)]
+                
+                            serr2_a[k,j] += sreg2_v_a.conf_int(alpha=0.05)[1]["C(tenure)[T.%d]:C(max_tenure)[%d]"%(j,k)]
+                            serr2_b[k,j] += sreg2_v_b.conf_int(alpha=0.05)[1]["C(tenure)[T.%d]:C(max_tenure)[%d]"%(j,k)]
+                            
+
                         
                 derr_a[k,j] -= deffect_a[k,j]
                 derr_b[k,j] -= deffect_b[k,j]
                 
                 serr_a[k,j] -= seffect_a[k,j]
                 serr_b[k,j] -= seffect_b[k,j]
+
+                if pref!='':
+                    serr2_a[k,j] -= seffect2_a[k,j]
+                    serr2_b[k,j] -= seffect2_b[k,j]
+                    
 
 
 
@@ -489,6 +668,12 @@ for k in range(1,max_tenure_scalar+1):
             caldata2[0][calcol] = deffect_a[k,j]
             caldata2[1][calcol] = seffect_a[k,j]
             caldata2[2][calcol] = dse_a[k,j]
+            
+            if(not(j==0 or j==k)):
+                    caldata2[2][calcol] = caldata2[2][calcol]*10000
+            else:
+                    caldata2[2][calcol] = caldata2[2][calcol]/1
+
             calcol = calcol+1
 
 for k in range(1,max_tenure_scalar+1):
@@ -496,6 +681,12 @@ for k in range(1,max_tenure_scalar+1):
             caldata2[0][calcol] = deffect_b[k,j]
             caldata2[1][calcol] = seffect_b[k,j]
             caldata2[2][calcol] = dse_b[k,j]
+            
+            if(not(j==0 or j==k)):
+                    caldata2[2][calcol] = caldata2[2][calcol]*10000
+            else:
+                    caldata2[2][calcol] = caldata2[2][calcol]/2.5
+
             calcol = calcol+1
                 
 print('\tMaking plots...')
@@ -548,6 +739,65 @@ plt.sca(axes1[0])
 plt.savefig(outpath + 'life_cycle_dyn2_data_only.pdf',bbox_inches='tight')
 
 plt.close('all')
+
+
+
+
+
+
+fig1,axes1=plt.subplots(2,1,figsize=(4,6),sharex=True,sharey=True)
+               
+axes1[0].set_title('(a) Hard destinations',y=1.025)
+axes1[1].set_title('(b) Easy destinations',y=1.025)
+
+for k in range(1,max_tenure_scalar+1):
+
+    tenure = [x+1 for x in range(k+1)]
+    
+    axes1[0].plot(tenure,deffect_a[k,:k+1],
+                  color=colors[k-1],
+                  alpha=0.5,
+                  marker='o',
+                  linewidth=1,
+                  markersize=3,
+                  #capsize=3,
+                  linestyle='-',
+                  label='Duration = %d'%(k+1))
+
+    axes1[1].plot(tenure,deffect_b[k,:k+1],
+                  color=colors[k-1],
+                  marker='o',
+                  alpha=0.5,
+                  markersize=3,
+                  #capsize=3,
+                  linewidth=1,
+                  linestyle='-',
+                  label='Duration = %d'%(k+1))
+
+        #for cap in caps:
+        #        cap.set_markeredgewidth(1)
+
+axes1[0].set_ylim(0,3)
+axes1[1].set_ylim(0,3)
+axes1[0].legend(loc='upper left',prop={'size':6})
+axes1[0].set_xticks(range(1,max_tenure_scalar+2))
+axes1[1].set_xticks(range(1,max_tenure_scalar+2))
+#axes1[0].set_xlabel('Years in market')
+axes1[1].set_xlabel('Years in market')
+#axes1[1].set_yticks([])
+axes1[1].set_ylabel('log exports (relative to duration = 1)')
+axes1[0].set_ylabel('log exports (relative to duration = 1)')
+
+fig1.subplots_adjust(hspace=0.2,wspace=0.1)
+
+plt.sca(axes1[0])
+plt.savefig(outpath + 'life_cycle_dyn2_data_only_tall.pdf',bbox_inches='tight')
+
+plt.close('all')
+
+
+
+
 
 
 
@@ -639,5 +889,187 @@ plt.close('all')
 
 
 
+if pref!='':
+    fig1,axes1=plt.subplots(1,2,figsize=(7,3),sharex=True,sharey=True)
+               
+    axes1[0].set_title('(a) Hard destinations',y=1.025)
+    axes1[1].set_title('(b) Easy destinations',y=1.025)
+
+    lns=[]
+    for k in range(1,max_tenure_scalar+1):
+        
+        tenure = [x+1 for x in range(k+1)]
+    
+        l=axes1[0].plot(tenure,seffect_a[k,:k+1],
+                        color=colors[k-1],
+                        alpha=0.5,
+                        marker='o',
+                        linewidth=1,
+                        markersize=3,
+                        #capsize=3,
+                        linestyle='-',
+                        label='Duration = %d (baseline)'%(k+1))
+        lns.append(l)
+
+        l=axes1[1].plot(tenure,seffect_b[k,:k+1],
+                        color=colors[k-1],
+                        marker='o',
+                        alpha=0.5,
+                        markersize=3,
+                        #capsize=3,
+                        linewidth=1,
+                        linestyle='-',
+                        label='Duration = %d (baseline)'%(k+1))
+    lns.append(l)
+        
+    for k in range(1,max_tenure_scalar+1):
+
+        tenure = [x+1 for x in range(k+1)]
+    
+        l=axes1[0].plot(tenure,seffect2_a[k,:k+1],
+                        color=colors[k-1],
+                        alpha=0.5,
+                        marker='s',
+                        linewidth=1,
+                        markersize=3,
+                        #capsize=3,
+                        linestyle='--',
+                        label='Duration = %d (%s)'%(k+1,altlab))
+        lns.append(l)
+
+
+        l=axes1[1].plot(tenure,seffect2_b[k,:k+1],
+                        color=colors[k-1],
+                        marker='s',
+                        alpha=0.5,
+                        markersize=3,
+                        #capsize=3,
+                        linewidth=1,
+                        linestyle='--',
+                        label='Duration = %d (%s)'%(k+1,altlab))
+        lns.append(l)
+        
+
+    tablelegend(axes1[0], ncol=2, loc='upper left',#bbox_to_anchor=(0.063,0.62), 
+                row_labels=['2', '3', '4', '5', '6'], 
+                col_labels=['Baseline',altlab], 
+                title_label='Dur.')
+    
+
+    axes1[0].set_xticks(range(1,max_tenure_scalar+2))
+    axes1[1].set_xticks(range(1,max_tenure_scalar+2))
+    axes1[0].set_xlabel('Years in market')
+    axes1[1].set_xlabel('Years in market')
+    axes1[0].set_ylim(-0.5,3)
+    axes1[1].set_ylim(-0.5,3)
+    #axes1[1].set_yticks([])
+    axes1[0].set_ylabel('log exports (relative to duration = 1)')
+
+
+    fig1.subplots_adjust(hspace=0.1,wspace=0.1)
+
+    plt.sca(axes1[0])
+    plt.savefig(outpath + 'life_cycle_dyn2'+pref+'.pdf',bbox_inches='tight')
+
+plt.close('all')
+
+
+
+
+
+
+
 caldata3 = np.hstack((caldata,caldata2))
 np.savetxt(outpath + "calibration_data2.txt",caldata3,delimiter=" ")
+
+
+
+
+
+
+
+
+
+fig1,axes1=plt.subplots(2,1,figsize=(4,6),sharex=True,sharey=True)
+               
+axes1[0].set_title('(a) Hard destinations',y=1.025)
+axes1[1].set_title('(b) Easy destinations',y=1.025)
+
+lns=[]
+for k in range(1,max_tenure_scalar+1):
+        
+    tenure = [x+1 for x in range(k+1)]
+    
+    l=axes1[0].plot(tenure,deffect_a[k,:k+1],
+                    color=colors[k-1],
+                    alpha=0.5,
+                    marker='o',
+                    linewidth=1,
+                    markersize=3,
+                    #capsize=3,
+                    linestyle='-',
+                    label='Duration = %d (data)'%(k+1))
+    lns.append(l)
+
+    l=axes1[1].plot(tenure,deffect_b[k,:k+1],
+                    color=colors[k-1],
+                    marker='o',
+                    alpha=0.5,
+                    markersize=3,
+                    #capsize=3,
+                    linewidth=1,
+                    linestyle='-',
+                    label='Duration = %d (data)'%(k+1))
+    lns.append(l)
+        
+for k in range(1,max_tenure_scalar+1):
+
+    tenure = [x+1 for x in range(k+1)]
+    
+    l=axes1[0].plot(tenure,seffect_a[k,:k+1],
+                    color=colors[k-1],
+                    alpha=0.5,
+                    marker='s',
+                    linewidth=1,
+                    markersize=3,
+                    #capsize=3,
+                    linestyle='--',
+                    label='Duration = %d (model)'%(k+1))
+    lns.append(l)
+
+
+    l=axes1[1].plot(tenure,seffect_b[k,:k+1],
+                    color=colors[k-1],
+                    marker='s',
+                    alpha=0.5,
+                    markersize=3,
+                    #capsize=3,
+                    linewidth=1,
+                    linestyle='--',
+                    label='Duration = %d (model)'%(k+1))
+    lns.append(l)
+        
+
+tablelegend(axes1[0], ncol=2, loc='upper left',#bbox_to_anchor=(0.063,0.62), 
+            row_labels=['2', '3', '4', '5', '6'], 
+            col_labels=['Data','Model'], 
+            title_label='Dur.')
+
+
+axes1[0].set_xticks(range(1,max_tenure_scalar+2))
+axes1[1].set_xticks(range(1,max_tenure_scalar+2))
+#axes1[0].set_xlabel('Years in market')
+axes1[1].set_xlabel('Years in market')
+axes1[0].set_ylim(-0.5,3)
+axes1[1].set_ylim(-0.5,3)
+#axes1[1].set_yticks([])
+axes1[0].set_ylabel('log exports (relative to duration = 1)')
+axes1[1].set_ylabel('log exports (relative to duration = 1)')
+
+
+fig1.subplots_adjust(hspace=0.2,wspace=0.1)
+
+plt.sca(axes1[0])
+plt.savefig(outpath + 'life_cycle_dyn2_model_vs_data_tall.pdf',bbox_inches='tight')
+
+plt.close('all')

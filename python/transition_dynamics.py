@@ -73,8 +73,7 @@ def load_tr_dyn(fname,calc_grps):
 #############################################################################
 
 fnames=['../c/output/tr_dyn_perm_tau_drop.csv',
-        '../c/output/tr_dyn_rer_dep.csv',
-        '../c/output/tr_dyn_perm_tau_drop_uncertain.csv']
+        '../c/output/tr_dyn_rer_dep.csv']
 G=[]
 for f in fnames:
     G.append(load_tr_dyn(f,1))
@@ -87,15 +86,19 @@ if len(sys.argv)>1 and sys.argv[1]=='sunk':
         pref='sunkcost'
         altlab='sunk cost'
         fnames=['../c/output/tr_dyn_perm_tau_drop_sunkcost.csv',
-                '../c/output/tr_dyn_rer_dep_sunkcost.csv',
-                '../c/output/tr_dyn_perm_tau_drop_uncertain_sunkcost.csv']
+                '../c/output/tr_dyn_rer_dep_sunkcost.csv']
 
 elif len(sys.argv)>1 and sys.argv[1]=='acr':
         pref='acr'
         altlab='exog. entrant dyn.'
         fnames=['../c/output/tr_dyn_perm_tau_drop_acr.csv',
-                '../c/output/tr_dyn_rer_dep_acr.csv',
-                '../c/output/tr_dyn_perm_tau_drop_uncertain_acr.csv']
+                '../c/output/tr_dyn_rer_dep_acr.csv']
+
+elif len(sys.argv)>1 and sys.argv[1]=='smp':
+        pref='smp'
+        altlab='static mkt. pen.'
+        fnames=['../c/output/tr_dyn_perm_tau_drop_static_mkt_pen.csv',
+                '../c/output/tr_dyn_rer_dep_static_mkt_pen.csv']
         
 if pref!='':
         G2=[]
@@ -152,7 +155,11 @@ plt.savefig('output/tr_dyn_perm_tau_drop.pdf',bbox_inches='tight')
 if pref !='':
         g=G2[0]
 
-        for i in [0,2]:
+        R = [0,1]
+        if pref=='smp':
+                R = [0,1,2]
+                
+        for i in R:
                 c=cols[i]
                 axes[i].axhline(0,linestyle=':',color='black',alpha=0.5)
         
@@ -246,7 +253,12 @@ plt.savefig('output/tr_dyn_rer_dep.pdf',bbox_inches='tight')
 
 if pref!='':
         g=G2[1]
-        for i in [0,1]:
+
+        R = [0,1]
+        if pref=='smp':
+                R = [0,1,2]
+
+        for i in R:
                 c=cols[i]
 
                 axes[i].axhline(0,linestyle=':',color='black',alpha=0.5)
@@ -282,136 +294,3 @@ if pref!='':
 
 
 plt.close('all')
-
-
-#########################################################################
-
-fig,axes=plt.subplots(1,3,figsize=(7,3.0),sharex=True,sharey=False)
-
-cols=['expart_rate_pct_chg','mktpen_rate_pct_chg','trade_elasticity']
-titles=[r'(a) Num. exporters (\% chg)',
-        r'(b) Avg. mkt. pen. (\% chg)',
-        r'(c) Trade elasticity']
-
-for i in range(3):
-        c=cols[i]
-        axes[i].axhline(0,linestyle=':',color='black',alpha=0.5)
-
-        g=G[0]
-        
-        axes[i].plot(g[g.grp==0][c].reset_index(drop=True),
-                     color=colors[0],
-                     marker=fmts[0],
-                     alpha=0.75,
-                     markeredgewidth=0,
-                     label=r'Avg. of hard dests.')
-        
-        axes[i].plot(g[g.grp==1][c].reset_index(drop=True),
-                     color=colors[1],
-                     marker=fmts[1],
-                     alpha=0.75,
-                     markeredgewidth=0,
-                     label=r'Avg. of easy dests.')
-
-        g=G[2]
-        
-        axes[i].plot(g[g.grp==0][c].reset_index(drop=True),
-                     color=colors[2],
-                     marker=fmts[2],
-                     alpha=0.75,
-                     markeredgewidth=1,
-                     label=r'Avg. of hard dests. (uncertain)')
-        
-        axes[i].plot(g[g.grp==1][c].reset_index(drop=True),
-                     color=colors[3],
-                     marker=fmts[3],
-                     alpha=0.75,
-                     markeredgewidth=1,
-                     label=r'Avg. of easy dests. (uncertain)')
-
-
-        axes[i].set_title(titles[i],y=1.03)
-        
-#axes[0].set_ylim(-40,60)
-#axes[1].set_ylim(-12,12)
-#axes[2].set_ylim(0,6)
-axes[1].set_xlim(0,10)
-axes[1].set_xlabel('Years since policy change')
-axes[1].set_xticks(range(11))
-axes[1].set_xticklabels([('%d'%t if t%2==0 else '') for t in range(11)])
-#axes[2].legend(loc='lower right',prop={'size':6})
-
-
-ann1=axes[0].annotate(xy=(55,150),xytext=(0,0),xycoords='axes points',textcoords='offset points',s=r"Avg. of hard dests.",size=6)
-ann2=axes[0].annotate(xy=(43,89),xytext=(0,0),xycoords='axes points',textcoords='offset points',s=r"Avg. of easy dests.",size=6)
-
-ann3=axes[0].annotate(xy=(30,118),xytext=(0,0),xycoords='axes points',textcoords='offset points',s=r"Avg. of hard dests. (uncertain)",size=6)
-ann4=axes[0].annotate(xy=(30,72),xytext=(0,0),xycoords='axes points',textcoords='offset points',s=r"Avg. of easy dests. (uncertain)",size=6)
-
-fig.subplots_adjust(hspace=0.2,wspace=0.25)
-plt.savefig('output/tr_dyn_perm_tau_drop_uncertain.pdf',bbox_inches='tight')
-
-plt.close('all')
-
-
-if pref!='':
-        fig,axes=plt.subplots(1,3,figsize=(7,3.0),sharex=True,sharey=False)
-
-        cols=['expart_rate_pct_chg','mktpen_rate_pct_chg','trade_elasticity']
-        titles=[r'(a) Num. exporters (\% chg)',
-                r'(b) Avg. mkt. pen. (\% chg)',
-                r'(c) Trade elasticity']
-
-        for i in [0,2]:
-                c=cols[i]
-                axes[i].axhline(0,linestyle=':',color='black',alpha=0.5)
-
-                g=G2[0]
-        
-                axes[i].plot(g[g.grp==0][c].reset_index(drop=True),
-                             color=colors[0],
-                             marker=fmts[0],
-                             alpha=0.75,
-                             markeredgewidth=0,
-                             label=r'Avg. of hard dests.')
-        
-                axes[i].plot(g[g.grp==1][c].reset_index(drop=True),
-                             color=colors[1],
-                             marker=fmts[1],
-                             alpha=0.75,
-                             markeredgewidth=0,
-                             label=r'Avg. of easy dests.')
-
-                g=G2[2]
-        
-                axes[i].plot(g[g.grp==0][c].reset_index(drop=True),
-                             color=colors[2],
-                             marker=fmts[2],
-                             alpha=0.75,
-                             markeredgewidth=1,
-                             label=r'Avg. of hard dests. (uncertain)')
-        
-                axes[i].plot(g[g.grp==1][c].reset_index(drop=True),
-                             color=colors[3],
-                             marker=fmts[3],
-                             alpha=0.75,
-                             markeredgewidth=1,
-                             label=r'Avg. of easy dests. (uncertain)')
-
-
-                axes[i].set_title(titles[i],y=1.03)
-        
-        #axes[0].set_ylim(-40,60)
-        #axes[1].set_ylim(-12,12)
-        #axes[2].set_ylim(0,6)
-        axes[1].set_xlim(0,10)
-        axes[1].set_xlabel('Years since policy change')
-        axes[1].set_xticks(range(11))
-        axes[1].set_xticklabels([('%d'%t if t%2==0 else '') for t in range(11)])
-        #axes[2].legend(loc='lower right',prop={'size':6})
-
-
-        fig.subplots_adjust(hspace=0.2,wspace=0.25)
-        plt.savefig('output/tr_dyn_perm_tau_drop_uncertain_'+pref+'.pdf',bbox_inches='tight')
-
-        plt.close('all')

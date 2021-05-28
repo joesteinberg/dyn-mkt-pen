@@ -67,9 +67,6 @@
 #define NM 100 // dynamic policy function grid size
 #define NT 100 // simulation length
 #define NF 25000 // simulation population size
-#define NP 20
-//#define NY 82 //= (6+18) + (10+40) + 8
-#define NY 64 //= (3+10) + (10+40) + 1
 
 // macros: paralellization
 #ifdef _OPENMP
@@ -343,7 +340,7 @@ int find_root_1d(gsl_function * f, double xlo, double xhi, double * x)
 
 void linebreak()
 {
-  printf("\n////////////////////////////////////////////////////////////////////////////\n");
+  printf("\n////////////////////////////////////////////////////////////////////////////\n\n");
 }
 
 void linebreak2()
@@ -377,13 +374,7 @@ double gamma_o = 0.0; // diminishing returns to scale in marketing to old custom
 double psi_o = 0.0; // marketing efficiency for old customers
 double z_grid_mult_lb = 0.0;
 double z_grid_mult_ub = 0.0;
-double phi0 = 0.0;
-double phi1 = 0.0;
-double om0 = 0.0;
-double om1 = 0.0;
-double chi = 0.5;
-double zeta = 0.0;
- 
+
 // customer base grid
 double m_grid[NM] = {0.0};
 
@@ -754,122 +745,73 @@ void calc_survival_probs()
 int init_params()
 {
 
+  /*
+andidate parameter vector 44:                                                                           
+        sig_x =       1.02000000                                                                         
+        rho_x =       0.98194358                                                                         
+        sig_z =       0.43933157                                                                         
+        rho_z =       0.60418386                                                                         
+        z_lb =        3.56360171                                                                         
+        z_ub =        2.49261931                                                                         
+        psi_n =       0.09784021                                                                         
+        alpha_n =     0.50840453                                                                         
+        beta_n =      0.93977538                                                                         
+        gamma_n =     6.43893845                                                                         
+        psi_o =       0.06338877                                                                         
+        alpha_o =     0.96266760                                                                         
+        beta_o =      0.78924703                                                                         
+        gamma_o =     3.82324476                                                                         
+        delta0 =      34.65234000                                                                        
+        delta1 =      0.00309521    
+  */
+
+
+  // initial guesses for "exporting right away" version
+  /*
   W = 1.0;
   Q = 0.86245704;
-  theta = 5.0;
-  theta_hat = (1.0/theta) * pow(theta/(theta-1.0),1.0-theta);
-  
-  // version where we calibrate to means from sum stats and coefficients on dest. characteristics
   delta0 = 34.65234;
   delta1 = 0.00309521;
+  theta = 5.0;
+  theta_hat = (1.0/theta) * pow(theta/(theta-1.0),1.0-theta);
+  //sig_x =  0.90124936;
   sig_x =  1.02;
   rho_x = 0.98194358;
   sig_z = 0.43933157;
   rho_z =  0.60418386;
   alpha_n = 0.50840453;
   alpha_o = 0.96266760;
-  beta_n = 1.1;
+  beta_n = 0.93977538;
   beta_o = 0.78924476;
   gamma_n = 6.43893845;
   gamma_o = 3.82324476;
   psi_n = 0.09784021;
   psi_o = 0.06338877;
   z_grid_mult_lb=3.56360171;
-  z_grid_mult_ub=2.49261931;
-  phi1 = HUGE_VAL;
-  om1 = 0.0;
-  chi = HUGE_VAL;
-  zeta = 0;
+  z_grid_mult_ub=2.49261931;*/
 
-  // version where we calibrate to scatter plot
-  sig_x     = 1.05282416;
-  rho_x     = 0.97180212;
-  sig_z     = 0.34379083;
-  rho_z     = 0.70821268;
-  z_lb      = 3.50007169;
-  z_ub      = 3.12832517;
-  psi_n     = 0.09373621;
-  alpha_n   = 0.38657541;
-  beta_n    = 1.31282159;
-  gamma_n   = 5.82227468;
-  psi_o     = 0.03750000;
-  alpha_o   = 0.97332318;
-  beta_o    = 0.61402831;
-  gamma_o   = 2.80540597;
-  delta0    = 45.78209549;
-  delta1    = 0.00633985;
-  phi1      = 22.41115053;
-  om1       = 0.02633349;
-  chi       = 24.84106349;
-  zeta      = -0.58696446;
+  W = 1.0;
+  Q = 0.86245704;
+  delta0 = 20.65234;
+  delta1 = 0.015;
+  theta = 5.0;
+  theta_hat = (1.0/theta) * pow(theta/(theta-1.0),1.0-theta);
+  //sig_x =  0.90124936;
+  sig_x =  1.05;
+  rho_x = 0.98;
+  sig_z = 0.35;
+  rho_z =  0.25;
+  alpha_n = 0.175;
+  alpha_o = 0.3;
+  beta_n = 0.8;
+  beta_o = 0.3;
+  gamma_n = 8;
+  gamma_o = 5;
+  psi_n = 0.09784021;
+  psi_o = 0.06338877;
+  z_grid_mult_lb=3.5;
+  z_grid_mult_ub=3.5;
 
-  // from scinet (all)
-  double best[NP];
-
-   best[0]=1.030868617    ;
-   best[1]=0.9787937285   ;
-   best[2]=0.4749999999   ;
-   best[3]=0.6116456647   ;
-   best[4]=0.09835661977  ;
-   best[5]=0.5318245597   ;
-   best[6]=7.110766114    ;
-   best[6] = 6;
-   best[7] = 0.055;
-   best[8]=1.014598678    ;
-   best[9]=6.25           ;
-   best[10]=20             ;
-   best[11]=0.00139842196  ;
-    best[12]=1.144057975    ;
-   best[13]=0.7753645573   ;
-   best[14]=3.898813409    ;
-   best[15]=3.022510685    ;
-   best[16]=20.67841366    ;
-   best[17]=0.1328948797   ;
-   best[18]=19.53720283    ;
-   //best[19]=-0.5999999999  ;
-   best[19] = -1;
-
-       best[0]=1.052334668    ;
-        best[1]=0.9605961453   ;
-        best[2]=0.3500000001   ;
-        best[3]=0.6999999999   ;
-        best[4]=0.09367848148  ;
-        best[5]=0.4256130066   ;
-        best[6]=5.795622211    ;
-        best[7]=0.0375000001   ;
-        best[8]=0.9717731014   ;
-        best[9]=2.8            ;
-        best[10]=45             ;
-        best[11]=0.004221654591 ;
-        best[12]=1.3            ;
-        best[13]=0.6075313853   ;
-        best[14]=3.33590258     ;
-        best[15]=3.089793948    ;
-        best[16]=19.92464247    ;
-        best[17]=-0.129464741   ;
-        best[18]=24.84437708    ;
-        best[19]=-0.5925471898  ;
-
-   sig_x=best[0];
-   rho_x=best[1];
-   sig_z=best[2];
-   rho_z=best[3];
-   psi_n=best[4];
-   alpha_n=best[5];
-   gamma_n=best[6];
-   psi_o=best[7];
-   alpha_o=best[8];
-   gamma_o=best[9];
-   delta0=best[10];
-   delta1=best[11];
-   beta_n=best[12];
-   beta_o=best[13];
-   z_grid_mult_lb=best[14];
-   z_grid_mult_ub=best[15];
-   phi1=best[16];
-   om1=best[17];
-   chi=best[18];
-   zeta=best[19];
 
   // set all destination-specific variables to mean values... we will use the
   // array of destinations in parallelizing the calibration
@@ -1242,19 +1184,7 @@ double entrant_foc(double mp, void * data)
   int iz = p->iz;
   gsl_interp_accel * acc = p->acc;
 
-  //double plose = fmax( 1.0,exp(-phi1*pow(L[id],om1)*mp) + chi*pow(L[id],om0) );
-  double plose = exp(-phi1*pow(L[id],om1)*mp);
-  //double flose = chi*pow(L[id],zeta);
-  double flose = exp(-chi*pow(L[id],zeta)*mp);
-  
   int imp = gsl_interp_accel_find(acc, m_grid, NM, mp);
-  int imp_lose = gsl_interp_accel_find(acc, m_grid, NM, mp*(1.0-flose));
-
-  if(imp==0 && mp<1.0e-8)
-    {
-      imp_lose = 0;
-      plose = 0;
-    }
   
   double EdV=0.0;
   for(int izp=0; izp<NZ; izp++)
@@ -1263,42 +1193,17 @@ double entrant_foc(double mp, void * data)
 	{
 	  double Vm = interp_with_ix(m_grid,dV[id][ix][izp],NM,mp,imp);
 
-	  double Vm_lose = 0.0;
-	  if(plose>1.0e-8)
-	    Vm_lose = interp_with_ix(m_grid,dV[id][ix][izp],NM,mp,imp_lose);
-
-	  /*
-	  double Vm_gain = 0.0;
-	  if(pgain>1.0e-8)
-	  Vm_gain = interp_with_ix(m_grid,dV[id][ix][izp],NM,mp,imp_gain);*/
-
-	  Vm = plose*Vm_lose + (1.0-plose)*Vm;
-
 	  double Vm2=0.0;
-	  double Vm2_lose=0.0;
-	  //double Vm2_gain=0.0;
 	  if(rho_x<0.999)
-	    {
-	      Vm2 = interp_with_ix(m_grid,EdV_xp[id][izp],NM,mp,imp);
-
-	      if(plose>1.0e-8)
-		Vm2_lose = interp_with_ix(m_grid,EdV_xp[id][izp],
-					  NM,mp,imp_lose);
-
-	      /*
-	      if(pgain>1.0e-8)
-		Vm2_gain = interp_with_ix(m_grid,EdV_xp[id][izp],
-		NM,mp,imp_gain);*/
-
-	      Vm2 = plose*Vm2_lose + (1.0-plose)*Vm;
-	    }
-		
+	    Vm2 = interp_with_ix(m_grid,EdV_xp[id][izp],NM,mp,imp);
+	  
 	  EdV += z_trans_probs[iz][izp]*(rho_x*Vm + (1.0-rho_x)*Vm2);
+	  //EdV += z_trans_probs[iz][izp]*Vm;
 	}
     }
 
-  return ds_dn(id,0.0,mp) - pi_hat[id]*x_hat[ix]*z_hat[iz] - Q*delta[ix]*EdV;
-  //return ds_dn(id,0.0,mp) - Q*delta[ix]*EdV;
+  //return ds_dn(id,0.0,mp) - pi_hat[id]*x_hat[ix]*z_hat[iz] - Q*delta[ix]*EdV;
+  return ds_dn(id,0.0,mp) - Q*delta[ix]*EdV;
 }
 
 int iterate_entrant_policy(int id)
@@ -1365,19 +1270,7 @@ double incumbent_foc(double mp, void * data)
   int im = p->im;
   gsl_interp_accel * acc = p->acc;
 
-  //double plose = fmax( 1.0,exp(-phi1*pow(L[id],om1)*mp) + chi*pow(L[id],om0) );
-  double plose = exp(-phi1*pow(L[id],om1)*mp);
-  //double flose = chi*pow(L[id],zeta);
-  double flose = exp(-chi*pow(L[id],zeta)*mp);
-  
   int imp = gsl_interp_accel_find(acc, m_grid, NM, mp);
-  int imp_lose = gsl_interp_accel_find(acc, m_grid, NM, mp*(1.0-flose));
-
-  if(imp==0 && mp<1.0e-8)
-    {
-      imp_lose = 0;
-      plose = 0;
-    }
   
   double EdV=0.0;
   for(int izp=0; izp<NZ; izp++)
@@ -1386,43 +1279,18 @@ double incumbent_foc(double mp, void * data)
 	{
 	  double Vm = interp_with_ix(m_grid,dV[id][ix][izp],NM,mp,imp);
 
-	  double Vm_lose = 0.0;
-	  if(plose>1.0e-8)
-	    Vm_lose = interp_with_ix(m_grid,dV[id][ix][izp],NM,mp,imp_lose);
-
-	  /*
-	  double Vm_gain = 0.0;
-	  if(pgain>1.0e-8)
-	  Vm_gain = interp_with_ix(m_grid,dV[id][ix][izp],NM,mp,imp_gain);*/
-
-	  Vm = plose*Vm_lose + (1.0-plose)*Vm;
-
-	  double Vm2=0.0;
-	  double Vm2_lose=0.0;
-	  //double Vm2_gain=0.0;
+	  double Vm2 = 0.0;
 	  if(rho_x<0.999)
-	    {
-	      Vm2 = interp_with_ix(m_grid,EdV_xp[id][izp],NM,mp,imp);
-
-	      if(plose>1.0e-8)
-		Vm2_lose = interp_with_ix(m_grid,EdV_xp[id][izp],
-					  NM,mp,imp_lose);
-
-	      /*
-	      if(pgain>1.0e-8)
-		Vm2_gain = interp_with_ix(m_grid,EdV_xp[id][izp],
-		NM,mp,imp_gain);*/
-
-	      Vm2 = plose*Vm2_lose + (1.0-plose)*Vm;
-	    }
-		
+	    Vm2 = interp_with_ix(m_grid,EdV_xp[id][izp],NM,mp,imp);
+	  
 	  EdV += z_trans_probs[iz][izp]*(rho_x*Vm + (1.0-rho_x)*Vm2);
+	  //EdV += z_trans_probs[iz][izp]*Vm;
 	}
     }
 
   double mc = interp_with_ix(m_grid,export_cost_deriv_mp[id][im],NM,mp,imp);
-  double retval = mc - pi_hat[id]*x_hat[ix]*z_hat[iz] - Q*delta[ix]*EdV;
-  //double retval = mc - Q*delta[ix]*EdV;
+  //double retval = mc - pi_hat[id]*x_hat[ix]*z_hat[iz] - Q*delta[ix]*EdV;
+  double retval = mc - Q*delta[ix]*EdV;
   
   if(gsl_isinf(retval) || gsl_isnan(retval))
     {
@@ -1436,14 +1304,14 @@ double incumbent_foc(double mp, void * data)
 double envelope_cond(double mp, void * data)
 {
   dp_params * p = (dp_params *)data;
-  //int ix = p->ix;
-  //int iz = p->iz;
+  int ix = p->ix;
+  int iz = p->iz;
   int id = p->id;
   int im = p->im;
   gsl_interp_accel * acc = p->acc;
 
-  double f_1 = -interp(acc,m_grid,export_cost_deriv_m[id][im],NM,mp);
-  //double f_1 = pi_hat[id]*x_hat[ix]*z_hat[iz] - interp(acc,m_grid,export_cost_deriv_m[id][im],NM,mp);
+  //double f_1 = -interp(acc,m_grid,export_cost_deriv_m[id][im],NM,mp);
+  double f_1 = pi_hat[id]*x_hat[ix]*z_hat[iz] - interp(acc,m_grid,export_cost_deriv_m[id][im],NM,mp);
   
   return f_1;
 }
@@ -1628,7 +1496,6 @@ void save_policies()
 unsigned long int seed = 0;
 double x_rand[NF][NT*2];
 double z_rand[ND][NF][NT*2];
-double m_rand[ND][NF][NT*2];
 double surv_rand[NF][NT*2];
 double newx_rand[NF][NT*2];
 int ix_sim[NF][NT*2];
@@ -1659,7 +1526,6 @@ void random_draws()
 	  for(int t=0; t<NT*2; t++)
 	    {
 	      z_rand[id][i][t] = gsl_rng_uniform(r);
-	      m_rand[id][i][t] = gsl_rng_uniform(r);
 	      if(id==0)
 		{
 		  x_rand[i][t] = gsl_rng_uniform(r);
@@ -1729,20 +1595,20 @@ void simul(int id)
 
 	  // market penetration using policy function
 	  double mp = interp(acc3,m_grid,gm[id][ix][iz],NM,m);
-	  m_sim[id][jf][kt] = mp;
+	  m_sim[id][jf][kt] = m;
 
 	  // record current exports (which depend on state variables only!)
-	  if(mp<1.0e-8)
+	  if(m<1.0e-8)
 	    {
 	      v_sim[id][jf][kt] = -99.9;
 	    }
 	  else
 	    {
-	      v_sim[id][jf][kt] = theta*theta_hat*L[id]*Y[id]*tau_hat[id]*x_hat[ix]*z_hat[iz]*mp;
+	      v_sim[id][jf][kt] = theta*theta_hat*L[id]*Y[id]*tau_hat[id]*x_hat[ix]*z_hat[iz]*m;
 	    }
 
 	  // record exporting costs
-	  if(mp<1.0e-8)
+	  if(mp<1.0e-8 || m<1.0e-8)
 	    {
 	      cost_sim[id][jf][kt] = -99.9;
 	      cost2_sim[id][jf][kt] = -99.9;
@@ -1783,24 +1649,6 @@ void simul(int id)
 
 		  // draw a new demand shock from conditional distribution
 		  iz = gsl_interp_accel_find(acc2, z_trans_cumprobs[iz], NZ, z_rand[id][jf][kt+1]);
-
-		  // if you got a good or bad marketing shock, update mp
-
-		  //double plose = fmax( 1.0,exp(-phi1*pow(L[id],om1)*mp) + chi*pow(L[id],om0) );
-		  double plose = exp(-phi1*pow(L[id],om1)*mp);
-		  //double flose = chi*pow(L[id],zeta);
-		  double flose = exp(-chi*pow(L[id],zeta)*mp);
-
-		  if(mp<1.0e-8)
-		    {
-		      flose=0.0;
-		      plose = 0;
-		    }
-		  
-		  if(m_rand[id][jf][kt+1]<plose)
-		    {
-		      mp = mp * (1.0-flose);
-		    }
 		}
 
 	      // regardless, update market penetration
@@ -2374,12 +2222,12 @@ void calc_tr_dyn(int id, double tr_moments[3])
 	{
 	  for(int im=0; im<NM; im++)
 	    {
-	      if(gm[id][ix][iz][im]>1.0e-8 && dist[id][ix][iz][im]>1.0e-10)
-		//if(im>0 && dist[id][ix][iz][im]>1.0e-10)
+	      //if(gm[id][ix][iz][im]>1.0e-8 && dist[id][ix][iz][im]>1.0e-10)
+	      if(im>0 && dist[id][ix][iz][im]>1.0e-10)
 		{
 		  expart_rate += dist[id][ix][iz][im];
-		  m += gm[id][ix][iz][im] * x_hat[ix]*z_hat[iz]* dist[id][ix][iz][im];
-		  //m += m_grid[im]*x_hat[ix]*z_hat[iz]*dist[id][ix][iz][im];
+		  //m += gm[id][ix][iz][im] * x_hat[ix]*z_hat[iz]* dist[id][ix][iz][im];
+		  m += m_grid[im]*x_hat[ix]*z_hat[iz]*dist[id][ix][iz][im];
 		  sumw += x_hat[ix]*z_hat[iz]* dist[id][ix][iz][im];
 		  double v = theta*theta_hat*L[id]*Y[id]*tau_hat[id]*x_hat[ix]*z_hat[iz]*gm[id][ix][iz][im];
 		  total_exports += dist[id][ix][iz][im] * v;
@@ -2436,6 +2284,22 @@ int tr_dyn_perm_tau_chg(int id, double chg)
   int t;
   for(t=1; t<NT; t++)
     {
+      double junk = 0.0;
+      int junk2,junk3,junk4;
+      if(update_dist(id, tmp_dist2[id], &junk, &junk2, &junk3, &junk4))
+	{
+	  printf("Error updating distribution!\n");
+	  return 1;
+	}
+      memcpy(dist[id],tmp_dist2[id],NX*NZ*NM*sizeof(double));
+
+      calc_tr_dyn(id,tr_moments);
+      tr_tau[id][t+1] = pow(tau_hat[id],1.0/(1.0-theta));
+      tr_exports[id][t+1] = tr_moments[0];
+      tr_expart[id][t+1] = tr_moments[1];
+      tr_mktpen[id][t+1] = tr_moments[2];
+      tr_te[id][t+1] = -log(tr_exports[id][t+1]/tr_exports[id][0])/log(1.0+chg);
+
       /*
       double junk = 0.0;
       int junk2,junk3,junk4;
@@ -2445,22 +2309,6 @@ int tr_dyn_perm_tau_chg(int id, double chg)
 	  return 1;
 	}
 	memcpy(dist[id],tmp_dist2[id],NX*NZ*NM*sizeof(double));*/
-
-      calc_tr_dyn(id,tr_moments);
-      tr_tau[id][t+1] = pow(tau_hat[id],1.0/(1.0-theta));
-      tr_exports[id][t+1] = tr_moments[0];
-      tr_expart[id][t+1] = tr_moments[1];
-      tr_mktpen[id][t+1] = tr_moments[2];
-      tr_te[id][t+1] = -log(tr_exports[id][t+1]/tr_exports[id][0])/log(1.0+chg);
-
-      double junk = 0.0;
-      int junk2,junk3,junk4;
-      if(update_dist(id, tmp_dist2[id], &junk, &junk2, &junk3, &junk4))
-	{
-	  printf("Error updating distribution!\n");
-	  return 1;
-	}
-	memcpy(dist[id],tmp_dist2[id],NX*NZ*NM*sizeof(double));
     }
 
   // go back to benchmark trade costs, policies, and dist
@@ -2603,6 +2451,21 @@ int tr_dyn_perm_tau_chg_uncertain(int id, double chg)
   int t;
   for(t=1; t<NT; t++)
     {
+      double junk = 0.0;
+      int junk2,junk3,junk4;
+      if(update_dist(id, tmp_dist2[id], &junk, &junk2, &junk3, &junk4))
+	{
+	  printf("Error updating distribution!\n");
+	  status = 1;
+	}
+      memcpy(dist[id],tmp_dist2[id],NX*NZ*NM*sizeof(double));
+
+      calc_tr_dyn(id,tr_moments);
+      tr_tau[id][t+1] = pow(tau_hat[id],1.0/(1.0-theta));
+      tr_exports[id][t+1] = tr_moments[0];
+      tr_expart[id][t+1] = tr_moments[1];
+      tr_mktpen[id][t+1] = tr_moments[2];
+      tr_te[id][t+1] = -log(tr_exports[id][t+1]/tr_exports[id][0])/log(1.0+chg);
       /*
       double junk = 0.0;
       int junk2,junk3,junk4;
@@ -2612,21 +2475,6 @@ int tr_dyn_perm_tau_chg_uncertain(int id, double chg)
 	  status = 1;
 	}
 	memcpy(dist[id],tmp_dist2[id],NX*NZ*NM*sizeof(double));*/
-
-      calc_tr_dyn(id,tr_moments);
-      tr_tau[id][t+1] = pow(tau_hat[id],1.0/(1.0-theta));
-      tr_exports[id][t+1] = tr_moments[0];
-      tr_expart[id][t+1] = tr_moments[1];
-      tr_mktpen[id][t+1] = tr_moments[2];
-      tr_te[id][t+1] = -log(tr_exports[id][t+1]/tr_exports[id][0])/log(1.0+chg);
-      double junk = 0.0;
-      int junk2,junk3,junk4;
-      if(update_dist(id, tmp_dist2[id], &junk, &junk2, &junk3, &junk4))
-	{
-	  printf("Error updating distribution!\n");
-	  status = 1;
-	}
-	memcpy(dist[id],tmp_dist2[id],NX*NZ*NM*sizeof(double));
     }
 
   // go back to benchmark trade costs, policies, and dist
@@ -2734,7 +2582,7 @@ int tr_dyn_rer_shock(int id, double shock, double rho)
   for(t=1; t<NT; t++)
     {
       memcpy(gm[id],tmp_gm[t][id],NX*NZ*NM*sizeof(double));
-      /*
+      
       double junk = 0.0;
       int junk2,junk3,junk4;
       if(update_dist(id, tmp_dist2[id], &junk, &junk2, &junk3, &junk4))
@@ -2742,7 +2590,7 @@ int tr_dyn_rer_shock(int id, double shock, double rho)
 	  printf("Error updating distribution!\n");
 	  return 1;
 	}
-	memcpy(dist[id],tmp_dist2[id],NX*NZ*NM*sizeof(double));*/
+      memcpy(dist[id],tmp_dist2[id],NX*NZ*NM*sizeof(double));
 
       double rer = exp(shock*pow(rho,t));
       tau_hat[id] = tau_hat0 * pow(rer,theta-1.0);
@@ -2753,6 +2601,7 @@ int tr_dyn_rer_shock(int id, double shock, double rho)
       tr_expart[id][t+1] = tr_moments[1];
       tr_mktpen[id][t+1] = tr_moments[2];
       tr_te[id][t+1] = -log(tr_exports[id][t+1]/tr_exports[id][0])/(-log(rer));
+      /*
       double junk = 0.0;
       int junk2,junk3,junk4;
       if(update_dist(id, tmp_dist2[id], &junk, &junk2, &junk3, &junk4))
@@ -2760,7 +2609,7 @@ int tr_dyn_rer_shock(int id, double shock, double rho)
 	  printf("Error updating distribution!\n");
 	  return 1;
 	}
-	memcpy(dist[id],tmp_dist2[id],NX*NZ*NM*sizeof(double));
+	memcpy(dist[id],tmp_dist2[id],NX*NZ*NM*sizeof(double));*/
     }
 
   // go back to benchmark trade costs, policies, and dist
@@ -2947,13 +2796,14 @@ int write_lf_dyn_results(char * fname)
     }
 }
 
-/////////////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////////
 // 8. Main work function
-/////////////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////////
 
+#define NP 16
+#define NY 82
 FILE * results_file;
 int fcnt=0;
-int all_moments=1;
 
 //int work(const double params[NP], double residuals[NY])
 int work(const double params[NP], double * error)
@@ -2984,13 +2834,6 @@ int work(const double params[NP], double * error)
   z_grid_mult_lb = params[14];
   z_grid_mult_ub = params[15];
 
-  //phi0 = params[16];
-  phi1 = params[16];
-  //om0 = params[18];
-  om1 =params[17];
-  chi = params[18];
-  zeta = params[19];
-  
   if(results_file)
     {
       for(int i = 0; i<NP; i++)
@@ -3000,28 +2843,22 @@ int work(const double params[NP], double * error)
     }
       
   printf("\nCandidate parameter vector %d:\n",fcnt);
-  printf("\tsig_x     = %0.8f;\n",sig_x);
-  printf("\trho_x     = %0.8f;\n",rho_x);
-  printf("\tsig_z     = %0.8f;\n",sig_z);
-  printf("\trho_z     = %0.8f;\n",rho_z);
-  printf("\tz_lb      = %0.8f;\n",z_grid_mult_lb);
-  printf("\tz_ub      = %0.8f;\n",z_grid_mult_ub);
-  printf("\tpsi_n     = %0.8f;\n",psi_n);
-  printf("\talpha_n   = %0.8f;\n",alpha_n);
-  printf("\tbeta_n    = %0.8f;\n",beta_n);
-  printf("\tgamma_n   = %0.8f;\n",gamma_n);
-  printf("\tpsi_o     = %0.8f;\n",psi_o);
-  printf("\talpha_o   = %0.8f;\n",alpha_o);
-  printf("\tbeta_o    = %0.8f;\n",beta_o);
-  printf("\tgamma_o   = %0.8f;\n",gamma_o);
-  printf("\tdelta0    = %0.8f;\n",delta0);
-  printf("\tdelta1    = %0.8f;\n",delta1);
-  //printf("\tphi0      = %0.8f\n",phi0);
-  printf("\tphi1      = %0.8f;\n",phi1);
-  //printf("\tom0       = %0.8f\n",om0);
-  printf("\tom1       = %0.8f;\n",om1);
-  printf("\tchi       = %0.8f;\n",chi);
-  printf("\tzeta      = %0.8f;\n",zeta);
+  printf("\tsig_x =       %0.8f\n",sig_x);
+  printf("\trho_x =       %0.8f\n",rho_x);
+  printf("\tsig_z =       %0.8f\n",sig_z);
+  printf("\trho_z =       %0.8f\n",rho_z);
+  printf("\tz_lb =        %0.8f\n",z_grid_mult_lb);
+  printf("\tz_ub =        %0.8f\n",z_grid_mult_ub);
+  printf("\tpsi_n =       %0.8f\n",psi_n);
+  printf("\talpha_n =     %0.8f\n",alpha_n);
+  printf("\tbeta_n =      %0.8f\n",beta_n);
+  printf("\tgamma_n =     %0.8f\n",gamma_n);
+  printf("\tpsi_o =       %0.8f\n",psi_o);
+  printf("\talpha_o =     %0.8f\n",alpha_o);
+  printf("\tbeta_o =      %0.8f\n",beta_o);
+  printf("\tgamma_o =     %0.8f\n",gamma_o);
+  printf("\tdelta0 =      %0.8f\n",delta0);
+  printf("\tdelta1 =      %0.8f\n\n",delta1);
   
   for(int id=0; id<ND; id++)
     {
@@ -3081,32 +2918,28 @@ int work(const double params[NP], double * error)
       double residuals[NY];
       
       int got = 0;
-      for(int i=0; i<NY-1; i++)
+      for(int i=0; i<NY-8; i++)
 	{
 	  got += fscanf(file,"%lf",&(data_moments[i]));
 	}
-      for(int i=0; i<NY-1; i++)
+      for(int i=0; i<NY-8; i++)
 	{
 	  got += fscanf(file,"%lf",&(model_moments[i]));
 	}
-      for(int i=0; i<NY-1; i++)
+      for(int i=0; i<NY-8; i++)
 	{
 	  got += fscanf(file,"%lf",&(weights[i]));
 	}
 	    
       fclose(file);
-      if(got!=3*(NY-1))
+      if(got!=3*(NY-8))
 	{
 	  printf("Failed to load calibration data! Got = %d\n",got);
 	  return 1;
 	}
       else
 	{
-	  weights[NY-1] = 0.1;
-          data_moments[NY-1] = 0.25;
-          model_moments[NY-1] = expart_multi;
-
-	  /*
+	  
 	  data_moments[NY-8] = 0.25;
 	  model_moments[NY-8] = expart_multi;
 	  
@@ -3139,32 +2972,22 @@ int work(const double params[NP], double * error)
 	  weights[NY-4] = 0.005813;
 	  weights[NY-3] = 0.004722;
 	  weights[NY-2] = 0.003073;
-	  weights[NY-1] = 0.001910;*/
+	  weights[NY-1] = 0.001910;
 
 	  *error = 0.0;
-	  double err1=0.0;
-          double err2=0.0;
 	  double sum = 0.0;
-	  int num_moments = all_moments ? NY : 13;
-          for(int i=0; i<num_moments; i++)
+	  for(int i=0; i<NY; i++)
 	    {
 	      double tmp = fabs(data_moments[i]-model_moments[i]);
-	      double w = weights[i];
-
-              if(data_moments[i]>5)
-                {
-                  tmp = fabs(log(data_moments[i])-log(model_moments[i]));
-                  w = log(weights[i]);
-                }
-
-	      if(!gsl_isnan(tmp) && !gsl_isinf(tmp))
-                {
-                  err1 += tmp*tmp/(w*w);
-                  err2 += tmp*tmp;
-                  sum += 1.0/(w*w);
-                  residuals[i] = tmp;
-                }
-
+	      //	      if(i==3 || i==4 || i==17 || i==18 || i==19)
+	      //tmp = tmp/fabs(data_moments[i]);
+	      
+	      *error += tmp*tmp/(weights[i]*weights[i]);
+	      ////*error += tmp*tmp/(weights[i]*weights[i]);
+	      sum += 1.0/(weights[i]*weights[i]);
+	      
+	      residuals[i] = tmp;
+	      
 	      if(results_file)
 		{
 		  fprintf(results_file,"%0.16f",tmp);
@@ -3173,37 +2996,13 @@ int work(const double params[NP], double * error)
 		}
 	    }
 
-          if(!all_moments)
-            {
-              num_moments++;
-              int i=NY-8;
-              double tmp = fabs(data_moments[i]-model_moments[i]);
-
-	      if(!gsl_isnan(tmp) && !gsl_isinf(tmp))
-                {
-                  err1 += tmp*tmp/(weights[i]*weights[i]);
-                  err2 += tmp*tmp;
-                  sum += 1.0/(weights[i]*weights[i]);
-                  residuals[i] = tmp;
-                }
-
-	      if(results_file)
-		{
-		  fprintf(results_file,"%0.16f",tmp);
-		  if(i<NY-1)
-		    fprintf(results_file,",");
-		}      
-            }	  
-
 	  if(results_file)
 	    {
 	      fprintf(results_file,"\n");
 	      fflush(results_file);
 	    }
-
-	  err2 = sqrt(err1/sum);
-          err1 = sqrt(err2/num_moments);
-          *error  = 0.75*err1 + 0.25*err2;
+	  //*error = sqrt(*error/NY);
+	  *error = sqrt(*error/sum);
 
 	  int fails=0;
 	  for(int j=0; j<ND; j++)
@@ -3211,7 +3010,7 @@ int work(const double params[NP], double * error)
 	      fails += policy_solved_flag[j];
 	    }
 	  *error = *error + (double)(fails)/((double)(ND));
-	  
+
 	  time(&stop);
 
 	  if(verbose>=2)
@@ -3219,50 +3018,80 @@ int work(const double params[NP], double * error)
 	      printf("-------------------------------------------------\n");
 	      
 	      printf("\nMoments:                               data model diff:\n\n");
-	      int cnt=0;
-	      
-	      printf("\tExport part. coeffs. on dest. chars.:\n");
-	      printf("\tLog pop.                      %+0.4f %+0.4f %0.4f\n",
+
+	      printf("\tNum. exporters (cv):           %+0.4f %+0.4f %0.4f\n",
 		     data_moments[0],model_moments[0],residuals[0]);
-	      printf("\tLog GDP.                      %+0.4f %+0.4f %0.4f\n",
+	      printf("\tTop 5 share (avg):             %+0.4f %+0.4f %0.4f\n",
 		     data_moments[1],model_moments[1],residuals[1]);
-	      printf("\tLog tau.                      %+0.4f %+0.4f %0.4f\n",
+	      //printf("\tTop 5 share (iqr):             %+0.4f %+0.4f %0.4f\n",
+	      //	     data_moments[2],model_moments[2],residuals[2]);
+	      printf("\tAvg num dest (avg):            %+0.3f %+0.3f %0.4f\n",
 		     data_moments[2],model_moments[2],residuals[2]);
-	      cnt = cnt+3;
+	      //printf("\tAvg num dest (iqr):            %+0.4f %+0.4f %0.4f\n",
+	      //	     data_moments[4],model_moments[4],residuals[4]);
+	      printf("\tExit rate (avg):               %+0.4f %+0.4f %0.4f\n",
+		     data_moments[3],model_moments[3],residuals[3]);
+	      //printf("\tExit rate (iqr):               %+0.4f %+0.4f %0.4f\n",
+	      //     data_moments[6],model_moments[6],residuals[6]);
+	      printf("\tEntrant rel size (avg):        %+0.4f %+0.4f %0.4f\n",
+		     data_moments[4],model_moments[4],residuals[4]);
+	      //printf("\tEntrant rel size (iqr):        %+0.4f %+0.4f %0.4f\n",
+	      //	     data_moments[8],model_moments[8],residuals[8]);
+	      printf("\tEntrant rel exit rate (avg):   %+0.4f %+0.4f %0.4f\n",
+		     data_moments[5],model_moments[5],residuals[5]);
+	      //printf("\tEntrant rel exit rate (iqr):   %+0.4f %+0.4f %0.4f\n",
+	      //     data_moments[10],model_moments[10],residuals[10]);
 
-	      printf("\n\tScatter plots for other facts:\n");
-	      printf("\tTop 5 share (alpha)           %+0.4f %+0.4f %0.4f\n",
-		     data_moments[cnt],model_moments[cnt],residuals[cnt]);
-	      printf("\tTop 5 share (beta)            %+0.4f %+0.4f %0.4f\n",
-		     data_moments[cnt+1],model_moments[cnt+1],residuals[cnt+1]);
-	      cnt += 2;
+	      int cnt=6;
 	      
-	      printf("\tAvg. num dests. (alpha)       %+0.4f %+0.4f %0.4f\n",
+	      printf("\tNum. exporters (beta rgdp):    %+0.4f %+0.4f %0.4f\n",
 		     data_moments[cnt],model_moments[cnt],residuals[cnt]);
-	      printf("\tAvg. num. dest. (beta)        %+0.4f %+0.4f %0.4f\n",
+	      printf("\tNum. exporters (beta pop):     %+0.4f %+0.4f %0.4f\n",
 		     data_moments[cnt+1],model_moments[cnt+1],residuals[cnt+1]);
-	      cnt += 2;
+	      printf("\tNum. exporters (beta tau):     %+0.4f %+0.4f %0.4f\n",
+		     data_moments[cnt+2],model_moments[cnt+2],residuals[cnt+2]);
+	      cnt=cnt+3;
 
-	      printf("\tExit rate (alpha)             %+0.4f %+0.4f %0.4f\n",
+	      printf("\tTop 5 share (beta rgdp):       %+0.4f %+0.4f %0.4f\n",
 		     data_moments[cnt],model_moments[cnt],residuals[cnt]);
-	      printf("\tExit rae (beta)               %+0.4f %+0.4f %0.4f\n",
+	      printf("\tTop 5 share (beta pop):        %+0.4f %+0.4f %0.4f\n",
 		     data_moments[cnt+1],model_moments[cnt+1],residuals[cnt+1]);
-	      cnt += 2;
-	      
+	      printf("\tTop 5 share (beta tau):        %+0.4f %+0.4f %0.4f\n",
+		     data_moments[cnt+2],model_moments[cnt+2],residuals[cnt+2]);
+	      cnt=cnt+3;
 
-	      printf("\tEntrant rel. size (alpha)     %+0.4f %+0.4f %0.4f\n",
+	      printf("\tAvg num dest (beta rgdp):      %+0.4f %+0.4f %0.4f\n",
 		     data_moments[cnt],model_moments[cnt],residuals[cnt]);
-	      printf("\tEntrant rel. size (beta)      %+0.4f %+0.4f %0.4f\n",
+	      printf("\tAvg num dest (beta pop):       %+0.4f %+0.4f %0.4f\n",
 		     data_moments[cnt+1],model_moments[cnt+1],residuals[cnt+1]);
-	      cnt += 2;
-	      
-	      printf("\tEntrant rel. exit (alpha)     %+0.4f %+0.4f %0.4f\n",
-		     data_moments[cnt],model_moments[cnt],residuals[cnt]);
-	      printf("\tEntrant rel. exit (beta)      %+0.4f %+0.4f %0.4f\n",
-		     data_moments[cnt+1],model_moments[cnt+1],residuals[cnt+1]);
-	      cnt += 2;
+	      printf("\tAvg num dest (beta tau):       %+0.4f %+0.4f %0.4f\n",
+		     data_moments[cnt+2],model_moments[cnt+2],residuals[cnt+2]);
+	      cnt=cnt+3;
 
-	      
+	      printf("\tExit rate (beta rgdp):         %+0.4f %+0.4f %0.4f\n",
+		     data_moments[cnt],model_moments[cnt],residuals[cnt]);
+	      printf("\tExit rate (beta pop):          %+0.4f %+0.4f %0.4f\n",
+		     data_moments[cnt+1],model_moments[cnt+1],residuals[cnt+1]);
+	      printf("\tExit rate (beta tau):          %+0.4f %+0.4f %0.4f\n",
+		     data_moments[cnt+2],model_moments[cnt+2],residuals[cnt+2]);
+	      cnt=cnt+3;
+
+	      printf("\tEntrant rel size (beta rgdp):  %+0.4f %+0.4f %0.4f\n",
+		     data_moments[cnt],model_moments[cnt],residuals[cnt]);
+	      printf("\tEntrant rel size (beta pop):   %+0.4f %+0.4f %0.4f\n",
+		     data_moments[cnt+1],model_moments[cnt+1],residuals[cnt+1]);
+	      printf("\tEntrant rel size (beta tau):   %+0.4f %+0.4f %0.4f\n",
+		     data_moments[cnt+2],model_moments[cnt+2],residuals[cnt+2]);
+	      cnt=cnt+3;
+
+	      printf("\tEntrant rel exit (beta rgdp):  %+0.4f %+0.4f %0.4f\n",
+		     data_moments[cnt],model_moments[cnt],residuals[cnt]);
+	      printf("\tEntrant rel exit (beta pop):   %+0.4f %+0.4f %0.4f\n",
+		     data_moments[cnt+1],model_moments[cnt+1],residuals[cnt+1]);
+	      printf("\tEntrant rel exit (beta tau):   %+0.4f %+0.4f %0.4f\n",
+		     data_moments[cnt+2],model_moments[cnt+2],residuals[cnt+2]);
+	      cnt=cnt+3;
+
 	      printf("\n\tEffects of tenure on survival (hard)\n");
 	      printf("\t1:                            %+0.4f %+0.4f %0.4f\n",
 		     data_moments[cnt],model_moments[cnt],residuals[cnt]);
@@ -3314,8 +3143,26 @@ int work(const double params[NP], double * error)
 	      
 	      printf("\n\tMultilateral ex. part. rate:   %0.4f %0.4f %0.4f\n",
 		     data_moments[cnt],model_moments[cnt],residuals[cnt]);
+	      printf("\tMultilateral exit rate:        %0.4f %0.4f %0.4f\n",
+		     data_moments[cnt+1],model_moments[cnt+1],residuals[cnt+1]);
+	      printf("\tMultilateral exit rate (1D):   %0.4f %0.4f %0.4f\n",
+		     data_moments[cnt+2],model_moments[cnt+2],residuals[cnt+2]);
+	      printf("\tMultilateral exit rate (2D):   %0.4f %0.4f %0.4f\n",
+		     data_moments[cnt+3],model_moments[cnt+3],residuals[cnt+3]);
+	      printf("\tMultilateral exit rate (3D):   %0.4f %0.4f %0.4f\n",
+		     data_moments[cnt+4],model_moments[cnt+4],residuals[cnt+4]);
+	      printf("\tMultilateral exit rate (4D):   %0.4f %0.4f %0.4f\n",
+		     data_moments[cnt+5],model_moments[cnt+5],residuals[cnt+5]);
+	      printf("\tMultilateral exit rate (6D):   %0.4f %0.4f %0.4f\n",
+		     data_moments[cnt+6],model_moments[cnt+6],residuals[cnt+6]);
+	      printf("\tMultilateral exit rate (10D):  %0.4f %0.4f %0.4f\n",
+		     data_moments[cnt+7],model_moments[cnt+7],residuals[cnt+7]);
 	      
 	      printf("\n\tNumber of failed destinations:       %d\n",fails);
+	      /*printf("\tMultilateral ex. part. rate:   %+0.4f %+0.4f %0.4f\n",
+		     data_moments[cnt],model_moments[cnt],residuals[cnt]);
+	      printf("\tMultilateral exit rate:        %+0.4f %+0.4f %0.4f\n",
+	      data_moments[cnt+1],model_moments[cnt+1],residuals[cnt+1]);*/
 	    }
 	  
 	  printf("\nFitness evaluation complete! Runtime = %0.0f seconds. Error = %0.8f\n",difftime(stop,start),*error);
@@ -3419,13 +3266,7 @@ int main(int argc, char * argv[])
   params[13] = beta_o;
   params[14] = z_grid_mult_lb;
   params[15] = z_grid_mult_ub;
-  //params[16] = phi0;
-  params[16] = phi1;
-  //params[18] = om0;
-  params[17] = om1;
-  params[18] = chi;
-  params[19] = zeta;
-  
+
   // solve model once
   if(calibrate==0)
     {
@@ -3444,6 +3285,7 @@ int main(int argc, char * argv[])
       linebreak();
       linebreak();
 
+
       // sig_x, rho_x
       // sig_z, rho_z
       // psi_n, alpha_n, gamma_n
@@ -3451,71 +3293,30 @@ int main(int argc, char * argv[])
       // delta1, delta0
       // beta_n, beta_o
       // zlo, zhi
-      // plose, pgain
-      // phi_lose, phi_gain
-      // frac_lose, frac_gain
-      // chi_lose, chi_gain
-      // psi_lose, psi_gain
-      // om_lose, om_gain
+        
+      double lb[NP] = {0.95, 0.8,
+		       0.25, 0.6,
+		       0.04, 0.2, 4.0,
+		       0.04, 0.25, 2.25,
+		       25.0, 0.0005,
+		       0.2, 0.2,
+		       2.0,2.0};
+      double ub[NP] = {1.15, 0.99,
+		       0.5, 0.925,
+		       0.125, 1.3, 7.5,
+		       0.125, 1.3, 5.0,
+		       45.0, 0.01,
+		       1.3, 1.3,
+		       4.0,4.0};
+  
+      nlopt_opt opt;
 
-      /*
-    best[0]=1.052334668    ;
-        best[1]=0.9605961453   ;
-        best[2]=0.3500000001   ;
-        best[3]=0.6999999999   ;
-        best[4]=0.09367848148  ;
-        best[5]=0.4256130066   ;
-        best[6]=5.795622211    ;
-        best[7]=0.0375000001   ;
-        best[8]=0.9717731014   ;
-        best[9]=2.8            ;
-        best[10]=45             ;
-        best[11]=0.004221654591 ;
-        best[12]=1.3            ;
-        best[13]=0.6075313853   ;
-        best[14]=3.33590258     ;
-        best[15]=3.089793948    ;
-        best[16]=19.92464247    ;
-        best[17]=-0.129464741   ;
-        best[18]=24.84437708    ;
-        best[19]=-0.5925471898  ;*/
- 
-      
-      double lb[NP] = {1.01, 0.94,
-		       0.15, 0.55,
-		       0.085, 0.35, 5.0,
-		       0.0375, 0.925, 2.5,
-		       15.0, 0.0001,
-		       0.9, 0.475,
-		       3.0,2.0,
-		       5,-0.75,
-		       5,-0.75};
-
-      double ub[NP] = {1.06, 0.998,
-		       0.65, 0.925,
-		       0.12, 0.65, 8,
-		       0.065, 1.05, 5,
-		       55.0, 0.01,
-		       1.6, 1.05,
-		       4,3.5,
-		       25,0.5,
-		       25,0.5};
-      
-      nlopt_opt opt = nlopt_create(NLOPT_LN_NELDERMEAD, NP);
+      opt = nlopt_create(NLOPT_LN_SBPLX, NP);
       nlopt_set_lower_bounds(opt, lb);
       nlopt_set_upper_bounds(opt, ub);
-      //nlopt_set_population(opt,(NP+1)*10);
       nlopt_set_min_objective(opt, work_nlopt_wrapper, opt);
-      nlopt_set_xtol_rel(opt, 1e-2);
-      nlopt_set_ftol_rel(opt, 1e-2);
+      nlopt_set_xtol_rel(opt, 1e-4);
       nlopt_set_maxeval(opt, 3000);
-
-      /*nlopt_opt opt2 = nlopt_create(NLOPT_LN_NELDERMEAD, NP);
-      nlopt_set_xtol_rel(opt2, 1e-2);
-      nlopt_set_ftol_rel(opt2, 1e-2);
-      nlopt_set_maxeval(opt2, 100);
-      nlopt_set_local_optimizer(opt, opt2);*/
-      
       
       double minf; /* `*`the` `minimum` `objective` `value,` `upon` `return`*` */
       results_file = fopen("output/results.csv","a");

@@ -57,6 +57,12 @@ const double x_grid_exp = 1.0;
 const int verbose=1;
 
 // initialize all elements of an array to the same numeric value
+int cmpfunc(const void * a, const void * b)
+{
+  if ( *(double*)a <  *(double*)b ) return -1;
+  else return 1;
+}
+
 void set_all_v(double * v, int n, double val)
 {
   int i;
@@ -325,8 +331,9 @@ double rho_x = 0.0; // productivity persistence
 double sig_z = 0.0; // demand dispersion
 double rho_z = 0.0; // demand persistence
 double corr_z = 0.0; // correlation of productivity shock innovations across destinations
-double kappa0 = 0.0; // marketing efficiency for new customers
-double kappa1 = 0.0; // marketing efficiency for old customers
+double alpha = 0.0; // returns to population size in marketing to new customers
+double gama = 0.0; // diminishing returns to scale in marketing to new customers
+double psi = 0.0; // marketing efficiency for new customers
 double z_grid_mult_lb = 0.0;
 double z_grid_mult_ub = 0.0;
 
@@ -347,17 +354,28 @@ double z_ucond_cumprobs[NZ] = {0.0}; // cumulative ergodic probabilities
 double z_trans_probs[NZ][NZ] = {{0.0}}; // transition probabilities
 double z_trans_cumprobs[NZ][NZ] = {{0.0}}; // cumultative transition probabilities
 
+double E_xhat_zhat[NX][NZ] = {{0.0}};
+
 // destination-specific parameters
 char name[ND][3] = {{""}}; // name
 double L[ND] = {0.0}; // market size
 double Y[ND] = {0.0}; // aggregate consumption index
-//double tau[ND] = {0.0}; // trade cost
-double La_n[ND] = {0.0}; // = L^(alpha_n)
-double Lam_n[ND] = {0.0}; // = L^(alpha_n-1)
-double La_o[ND] = {0.0}; // = L^(alpha_o)
-double Lam_o[ND] = {0.0}; // = L^(alpha_o-1)
+double La[ND] = {0.0}; // = L^(alpha)
+double Lam[ND] = {0.0}; // = L^(alpha-1)
 double tau_hat[ND] = {0.0}; // = tau^(1-theta)
 double pi_hat[ND] = {0.0}; // theta_hat*L*Y*tau_hat
+
+// marketing cost for new customers
+static inline double s(int id, double n)
+{
+  return La[id] * ( 1 - pow((1.0-n),1.0-gama) ) / psi / (1.0-gama);
+}
+
+// derivative of s wrt n
+static inline double ds_dn(int id, double n)
+{
+  return La[id] / psi / pow((1.0-n),gama);
+}
 
 void discretize_x(int pareto)
 {
@@ -504,12 +522,28 @@ void discretize_z()
     }
 }
 
+
 void calc_survival_probs()
 {
   for(int ix=0; ix<NX; ix++)
     {
       double death_prob=fmax(0.0,fmin(exp(-delta0*x_hat[ix])+delta1,1.0));
       delta[ix] = 1.0-death_prob;
+
+      for(int iz=0; iz<NZ; iz++)
+	{
+	  E_xhat_zhat[ix][iz] = 0.0;
+	  for(int izp=0; izp<NZ; izp++)
+	    {
+	      double tmp = x_hat[ix]*z_hat[izp];
+	      double tmp2 = 0.0;
+	      for(int ixp=0; ixp<NX; ixp++)
+		{
+		  tmp2 += x_hat[ixp]*z_hat[izp]*x_ucond_probs[ixp];
+		}
+	      E_xhat_zhat[ix][iz] += z_trans_probs[iz][izp]*(rho_x*tmp + (1.0-rho_x)*tmp2);
+	    }
+	}
     }
 }
 
@@ -522,7 +556,6 @@ int init_params()
   delta1 = 0.00309521;
   theta = 5.0;
   theta_hat = (1.0/theta) * pow(theta/(theta-1.0),1.0-theta);
-  //sig_x =  0.90124936;
   sig_x =  1.02;
   rho_x = 0.98194358;
   sig_z = 0.43933157;
@@ -530,9 +563,10 @@ int init_params()
   z_grid_mult_lb=3.56360171;
   z_grid_mult_ub=2.49261931;
 
-  kappa0 = 16;
-  kappa1 = 4.5;
-
+  alpha = 0.9;
+  gama = 8;
+  psi = 0.04;
+  
   // set all destination-specific variables to mean values... we will use the
   // array of destinations in parallelizing the calibration
   FILE * file = fopen("../python/output/dests_for_c_program.txt","r");
@@ -562,6 +596,8 @@ int init_params()
 	      L[id] = pop;
 	      Y[id] = gdppc;
 	      tau_hat[id] = 1.0/tau_;
+	      La[id] = pow(L[id],alpha);
+	      Lam[id] = pow(L[id],alpha-1.0);
 	      strncpy(name[id],buffer,3);
 	      //tau_hat[id] = pow(tau[id],1.0-theta);
 	      pi_hat[id] = theta_hat * L[id] * Y[id] * tau_hat[id];
@@ -574,184 +610,72 @@ int init_params()
 
 
 /////////////////////////////////////////////////////////////////////////////
-// 3. Dynamic program
+// 3. Optimization problem
 /////////////////////////////////////////////////////////////////////////////
 
-//double pi[ND][NX][NZ] = {{{0.0}}};
-double V[ND][NX][NZ][2] = {{{{0.0}}}};
-double EV[ND][NX][NZ][2] = {{{{0.0}}}};
-int gex[ND][NX][NZ][2] = {{{{0}}}};
+double gm[ND][NX][NZ] = {{{0}}};
+double gc[ND][NX][NZ] = {{{0}}};
 double expart_rate[ND] = {0.0};
 int policy_solved_flag[ND] = {0};
 
-void init_dp_objs(int id)
+typedef struct
 {
-  for(int ix=0; ix<NX; ix++)
-    {
-      for(int iz=0; iz<NZ; iz++)
-	{
-	  V[id][ix][iz][0] = 0.0;
-	  V[id][ix][iz][1] = pi_hat[id]*x_hat[ix]*z_hat[iz]/Q;
-	}
-    }
-}
+  int id;
+  int ix;
+  int iz;
+}dp_params;
 
-void calc_EV(int id)
+double entrant_foc(double mp, void * data)
 {
-  for(int ix=0; ix<NX; ix++)
-    {
-      for(int iz=0; iz<NZ; iz++)
-	{
-	  for(int is=0; is<2; is++)
-	    {
-	      EV[id][ix][iz][is]=0.0;
+  dp_params * p = (dp_params *)data;
+  int id = p->id;
+  int ix = p->ix;
+  int iz = p->iz;
 
-	      for(int izp=0; izp<NZ; izp++)
-		{
-		  if(z_trans_probs[iz][izp]>1.0e-11)
-		    {
-		      EV[id][ix][iz][is] += rho_x*Q*delta[ix]*V[id][ix][izp][is]*z_trans_probs[iz][izp];
+  double mc = ds_dn(id,mp);
 
-		      for(int ixp=0; ixp<NX; ixp++)
-			{
-			  EV[id][ix][iz][is] += (1.0-rho_x)*Q*delta[ix]*V[id][ixp][izp][is]*z_trans_probs[iz][izp]*x_ucond_probs[ixp];
-			}
-		    }
-		}
-	    }		     
-	}
-    }
+  double EV=0.0;
   
-}
-
-void iterate_policies(int id, double * maxdiff, int imaxdiff[3])
-{
-  *maxdiff=-HUGE_VAL;
-
-  calc_EV(id);
-  
-  for(int ix=0; ix<NX; ix++)
-    {
-      for(int iz=0; iz<NZ; iz++)
-	{
-	  double pi = pi_hat[id]*x_hat[ix]*z_hat[iz];
-	  
-	  if(EV[id][ix][iz][0]<
-	     pi + EV[id][ix][iz][1] - kappa0)
-	    {
-	      gex[id][ix][iz][0] = 1;
-	    }
-	  else
-	    {
-	      gex[id][ix][iz][0] = 0;
-	    }
-
-	  if(EV[id][ix][iz][0]<
-	     pi + EV[id][ix][iz][1] - kappa1)
-	    {
-	      gex[id][ix][iz][1] = 1;
-	    }
-	  else
-	    {
-	      gex[id][ix][iz][1] = 0;
-	    }
-	  
-	  double tmp0 = fmax(EV[id][ix][iz][0],pi + EV[id][ix][iz][1] - kappa0);
-	  double tmp1 = fmax(EV[id][ix][iz][0],pi + EV[id][ix][iz][1] - kappa1);
-	  
-	  double diff0 = fabs(tmp0-V[id][ix][iz][0]);
-	  double diff1 = fabs(tmp1-V[id][ix][iz][1]);
-
-	  if(diff0>*maxdiff)
-	    {
-	      *maxdiff=diff0;
-	      imaxdiff[0]=ix;
-	      imaxdiff[1]=iz;
-	      imaxdiff[2]=0;
-	    }
-
-	  if(diff1>*maxdiff)
-	    {
-	      *maxdiff=diff1;
-	      imaxdiff[0]=ix;
-	      imaxdiff[1]=iz;
-	      imaxdiff[2]=1;
-
-	    }
-	  
-	  V[id][ix][iz][0] = tmp0;
-	  V[id][ix][iz][1] = tmp1;
-	}
-    }
-
-  for(int ix=0; ix<NX; ix++)
-    {
-      for(int iz=0; iz<NZ; iz++)
-	{
-	  if(gex[id][ix][iz][0]<0 || gex[id][ix][iz][0]>1 ||
-	     gex[id][ix][iz][1]<0 || gex[id][ix][iz][1]>1)
-	    {
-	      printf("Error! Non-binary value in policy function!\n");
-	    }
-	}
-    }
+  return mc - pi_hat[id]*x_hat[ix]*z_hat[iz];
+  //return mc - Q*delta[ix]*pi_hat[id]*E_xhat_zhat[ix][iz];
 }
 
 int solve_policies(int id)
-{
-  time_t start, stop;
-  time(&start);
-
-  init_dp_objs(id);
-
-  int status = 0;
-  double maxdiff = 999;
-  int imaxdiff[3];
-  
-  int iter=0;
-  do
-    {
-      iter++;
-      iterate_policies(id,&maxdiff,imaxdiff);
-
-      if(verbose==3)
-	printf("\t\tIter %d, diff = %0.2g, loc=(%d,%d,%d), ex=%d, V=%0.4g\n",
-	       iter,maxdiff,imaxdiff[0],imaxdiff[1],imaxdiff[2],
-	       gex[id][imaxdiff[0]][imaxdiff[1]][imaxdiff[2]],
-	       V[id][imaxdiff[0]][imaxdiff[1]][imaxdiff[2]]);
-    }
-  while(maxdiff>policy_tol_abs && iter < policy_max_iter);
-
-  expart_rate[id] = 0.0;
+{  
   for(int ix=0; ix<NX; ix++)
     {
       for(int iz=0; iz<NZ; iz++)
-	{
-	  expart_rate[id] += x_ucond_probs[ix]*z_ucond_probs[iz]*gex[id][ix][iz][0];
+	{ 
+	  dp_params p = {id,ix,iz};
+	  double lower_bound=0.0;
+	  double upper_bound=1.0-delta_root;
+
+	  if(entrant_foc(0.0,&p)>0.0)
+	    {
+	      gm[id][ix][iz] = 0.0;
+	      gc[id][ix][iz] = 0.0;
+	    }
+	  else if(entrant_foc(upper_bound,&p)<0.0)
+	    {
+	      gm[id][ix][iz] = upper_bound;
+	      gc[id][ix][iz] = s(id,upper_bound);
+	    }
+	  else
+	    {
+	      gsl_function f;
+	      f.function = &entrant_foc;
+	      f.params=&p;
+	      if(find_root_1d(&f,lower_bound,upper_bound,&(gm[id][ix][iz])))
+		{
+		  printf("\nError solving entrant's first-order condition! (id,ix,iz) = (%d,%d,%d)\n",ix,iz,id);
+		  return 1;
+		}
+	      gc[id][ix][iz] = s(id,gm[id][ix][iz]);
+	    }
 	}
-    }    
-
-  time(&stop);
-
-  if(iter==policy_max_iter)
-    {
-      status=1;
-      if(verbose==2)
-	printf("\tValue function iteration failed for %.3s! Diff = %0.4g\n",
-	       name[id],maxdiff);
-    }
-  else
-    {
-      if(verbose==2)
-	{
-	  printf("\tValue function converged for %.3s in %0.0f seconds!",
-		 name[id],difftime(stop,start));
-	  printf(" Export participation rate = %0.8f.\n",
-		 100*expart_rate[id]);
-	}
     }
 
-  return status;
+  return 0;
 
 }
 
@@ -778,15 +702,15 @@ int solve_policies_all_dests()
   
   if(verbose)
     {
-      printf("Finished dynamic programs in %0.0f seconds. %d failed to converge.\n",difftime(stop,start),cnt);
+      printf("Finished optimization problems in %0.0f seconds. %d failed to converge.\n",difftime(stop,start),cnt);
     }
   
   return 0;  
 }
 
-///////////////////////////////////////////////////////////////////////////////
+/////////////////////////////////////////////////////////////////////////////
 // 4. Simulation
-///////////////////////////////////////////////////////////////////////////////
+/////////////////////////////////////////////////////////////////////////////
 
 // storage for simulated data
 // we use 3*NT to store NT throwaway periods, NT periods to simulate for calibration,
@@ -798,7 +722,10 @@ double surv_rand[NF][NT*2];
 double newx_rand[NF][NT*2];
 int ix_sim[NF][NT*2];
 int iz_sim[ND][NF][NT*2];
+double m_sim[ND][NF][NT*2];
 double v_sim[ND][NF][NT*2];
+double cost_sim[ND][NF][NT*2];
+double cost2_sim[ND][NF][NT*2];
 
 // draw random variables
 void random_draws()
@@ -860,50 +787,51 @@ void simul(int id)
 
       if(ix<0 || ix>=NX)
 	{
-	  printf("Error! Invalid ix\n");
+	  printf("Error!\n");
 	}
       
       // find initial value of shock based on random draw and ergodic distribution
       gsl_interp_accel_reset(acc2);
       int iz = gsl_interp_accel_find(acc2, z_ucond_cumprobs, NZ, z_rand[id][jf][0]);
-
       iz_sim[id][jf][0] = iz;
-      
-      // start off as a non-exporter
-      int s=0;
-      
+
+      double m=0;
+            
       for(int kt=0; kt<max_kt; kt++)
 	{
-	  if(ix<0 || ix>=NX)
-	    {
-	      printf("Error! Invalid ix = %d\n",ix);
-	    }
-	  
-	  if(iz<0 || iz>=NZ)
-	    {
-	      printf("Error! Invalid iz = %d\n",iz);
-	    }
-	  
-	  if(s<0 || s>1)
-	    {
-	      printf("Non-binary export status detected in simulation!s = %d\n",s);
-	    }
-	  
 	  // record current state variables
 	  iz_sim[id][jf][kt]=iz;
 
 	  if(id==0)
 	    ix_sim[jf][kt]=ix;
 
-	  int sp = gex[id][ix][iz][s];
+	  double mp = gm[id][ix][iz];
 	  
-	  if(sp==0)
+	  m_sim[id][jf][kt] = mp;
+
+	  // record current exports (which depend on state variables only!)
+	  if(mp<1.0e-8)
 	    {
 	      v_sim[id][jf][kt] = -99.9;
 	    }
 	  else
 	    {
-	      v_sim[id][jf][kt] = theta*theta_hat*L[id]*Y[id]*tau_hat[id]*x_hat[ix]*z_hat[iz];
+	      v_sim[id][jf][kt] = theta*theta_hat*L[id]*Y[id]*tau_hat[id]*x_hat[ix]*z_hat[iz]*mp;
+	    }
+
+	  // record exporting costs
+	  if(mp<1.0e-8)
+	    {
+	      cost_sim[id][jf][kt] = -99.9;
+	      cost2_sim[id][jf][kt] = -99.9;
+	    }
+	  else
+	    {
+	      double profit = v_sim[id][jf][kt]/theta;
+	      double cost=0.0;
+	      cost=gc[id][ix][iz];	      
+	      cost_sim[id][jf][kt] = cost;
+	      cost2_sim[id][jf][kt] = cost/profit;
 	    }
 
 	  // unless we are in the very last period of the simulation, update the state variables
@@ -912,7 +840,7 @@ void simul(int id)
 	      // if you die, set market penetration to zero and draw new shocks from ergodic distributions
 	      if(surv_rand[jf][kt]>delta[ix])
 		{
-		  sp = 0;
+		  mp=0;
 		  ix=gsl_interp_accel_find(acc1, x_ucond_cumprobs, NX, x_rand[jf][kt+1]);
 		  iz=gsl_interp_accel_find(acc2, z_ucond_cumprobs, NZ, z_rand[id][jf][kt+1]);
 		}
@@ -927,8 +855,7 @@ void simul(int id)
 		  iz = gsl_interp_accel_find(acc2, z_trans_cumprobs[iz], NZ, z_rand[id][jf][kt+1]);
 		}
 
-	      // regardless, update market penetration
-	      s=sp;
+	      m=0;
 	    }
 	}
     }
@@ -944,12 +871,12 @@ void simul(int id)
 	      expart_rate_[kt-NT] += 1.0;
 	    }
 	}
-      expart_rate_[kt-NT] = expart_rate_[kt-NT]/NF;
+      expart_rate_[kt-NT] = expart_rate_[kt-NT]/((double)(NF));
       avg_expart_rate += expart_rate_[kt-NT];
     }
 
-  avg_expart_rate=avg_expart_rate/NT;
-
+  avg_expart_rate=avg_expart_rate/((double)(NT));
+  expart_rate[id] = avg_expart_rate;
   gsl_interp_accel_free(acc1);
   gsl_interp_accel_free(acc2);
 
@@ -963,7 +890,8 @@ void simul(int id)
 
 void simul_all_dests(double *avg_expart_rate,
 		     double *avg_exit_rate,
-		     double *avg_nd)
+		     double *avg_nd,
+		     double * avg_top5_share)
 {
   if(verbose)
     printf("\nSimulating for all destinations...\n");
@@ -1001,15 +929,15 @@ void simul_all_dests(double *avg_expart_rate,
 		}
 	    }
 	}
-      expart_rate_[kt-min_kt] = expart_rate_[kt-min_kt]/NF;
+      expart_rate_[kt-min_kt] = expart_rate_[kt-min_kt]/((double)(NF));
       *avg_expart_rate += expart_rate_[kt-min_kt];
     }
 
   *avg_expart_rate = *avg_expart_rate/(max_kt-min_kt);
 
-  //double exit_rate_[ND] = {{0.0}};
   double exit_rate_[ND] = {0.0};
   double avg_nd_[ND] = {0.0};
+  double top5_share_[ND] = {0.0};
   int ND2=0;
   for(int id=0; id<ND; id++)
     {
@@ -1023,12 +951,16 @@ void simul_all_dests(double *avg_expart_rate,
 	      int numex=0;
 	      int exits=0;
 	      int avg_nd2=0;
+
+	      double vsorted[NF];
+	      
 	      for(int jf=0; jf<NF; jf++)
 		{
 		  if(v_sim[id][jf][kt]>1.0e-10)
 		    {
+		      vsorted[numex] = v_sim[id][jf][kt];
 		      numex++;
-
+		      
 		      int nd=0;
 		      for(int id2=0; id2<ND; id2++)
 			{
@@ -1042,9 +974,7 @@ void simul_all_dests(double *avg_expart_rate,
 		  if(v_sim[id][jf][kt-1]>1.0e-10 && v_sim[id][jf][kt]<0.0)
 		    {
 		      exits ++;
-		    }
-
-	      
+		    }	      
 		}
 
 	      if(numex>0)
@@ -1052,17 +982,30 @@ void simul_all_dests(double *avg_expart_rate,
 		  NT2++;
 		  exit_rate_[id] += ((double)(exits))/((double)(numex));
 		  avg_nd_[id] += ((double)(avg_nd2))/((double)(numex));
+
+		  qsort(vsorted,numex,sizeof(double),cmpfunc);
+		  double sum=0;
+		  double sum2=0;
+		  for(int iii=numex-1; iii>=0; iii--)
+		    {
+		      sum += vsorted[iii];
+		      if( (double)(iii)/((double)(numex)) > 0.95 )
+			sum2 += vsorted[iii];
+		    }
+		  top5_share_[id] += sum2/sum;
 		}
 	    }
 	  if(NT2>0)
 	    {
 	      exit_rate_[id]= exit_rate_[id]/NT2;
 	      avg_nd_[id]= avg_nd_[id]/NT2;
+	      top5_share_[id]= top5_share_[id]/NT2;
 	    }
 	  else
 	    {
 	      exit_rate_[id]= 0.0;
 	      avg_nd_[id]= 0.0;
+	      top5_share_[id] = 0.0;
 	      ND2--;
 	      expart_rate[id]=0.0;
 	    }
@@ -1071,22 +1014,25 @@ void simul_all_dests(double *avg_expart_rate,
 
   *avg_exit_rate = 0.0;
   *avg_nd = 0.0;
+  *avg_top5_share=0.0;
   for(int id=0; id<ND; id++)
     {
       if(policy_solved_flag[id]==0 && expart_rate[id]>1.0e-10)
 	{
 	  *avg_exit_rate += exit_rate_[id];
 	  *avg_nd += avg_nd_[id];
+	  *avg_top5_share += top5_share_[id];
 	}
     }
   *avg_exit_rate = *avg_exit_rate/((double)(ND2));
   *avg_nd = *avg_nd/((double)(ND2));
+  *avg_top5_share = *avg_top5_share/((double)(ND2));
 	
   time(&stop);
 
   if(verbose)
-    printf("Finished simulations in %0.0f seconds.\n\tOverall export part. rate = %0.8f\n\tavg. exit rate = %0.8f\n\tavg. num. dests = %0.8f \n",
-	   difftime(stop,start),100*(*avg_expart_rate),100*(*avg_exit_rate),*avg_nd);
+    printf("Finished simulations in %0.0f seconds.\n\tOverall export part. rate = %0.8f\n\tavg. exit rate = %0.8f\n\tavg. num. dests = %0.8f\n\tavg. top 5 share = %0.8f\n",
+	   difftime(stop,start),100*(*avg_expart_rate),100*(*avg_exit_rate),*avg_nd,*avg_top5_share);
     
   return;
 }
@@ -1107,7 +1053,7 @@ void create_panel_dataset(const char * fname)
 
   int max_nd=0;
   
-  fprintf(file,"f,d,y,popt,gdppc,tau,v,ix,iz,nd,nd_group,entry,exit,incumbent,tenure,max_tenure,multilateral_exit\n");
+  fprintf(file,"f,d,y,popt,gdppc,tau,v,m,cost,cost2,x,iz,nd,nd_group,entry,exit,incumbent,tenure,max_tenure,multilateral_exit\n");
   for(int jf=0; jf<NF; jf++)
     {
       int max_tenure[ND] = {0};
@@ -1181,9 +1127,9 @@ void create_panel_dataset(const char * fname)
 		      int entrant = v_sim[id][jf][kt-1]<0.0;
 		      int incumbent = 1-entrant;
 		      
-		      fprintf(file,"FIRM%d,%.3s,%d,%0.16f,%0.16f,%0.16f,%0.16f,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d\n",
+		      fprintf(file,"FIRM%d,%.3s,%d,%0.16f,%0.16f,%0.16f,%0.16f,%0.16f,%0.16f,%0.16f,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d\n",
 			      jf,name[id],kt,L[id],Y[id],1.0/tau_hat[id],
-			      v_sim[id][jf][kt],
+			      v_sim[id][jf][kt],m_sim[id][jf][kt],cost_sim[id][jf][kt],cost2_sim[id][jf][kt],
 			      ix_sim[jf][kt],iz_sim[id][jf][kt],nd,nd_group,entrant,exit,incumbent,tenure[id],max_tenure[id],multilateral_exit);
 
 		      tenure[id] += 1;
@@ -1217,16 +1163,13 @@ void create_panel_dataset(const char * fname)
 const double dist_tol = 1.0e-11;
 const int max_dist_iter = 5000;
 
-double dist[ND][NX][NZ][2] = {{{{0.0}}}};
-double tmp_dist[ND][NX][NZ][2] = {{{{0.0}}}};
-double tmp_dist2[ND][NX][NZ][2] = {{{{0.0}}}};
-int tmp_gex[NT][ND][NX][NZ][2] = {{{{{0}}}}};
-double tmp_V[ND][NX][NZ][2] = {{{{0.0}}}};
-
+double dist[ND][NX][NZ] = {{{0.0}}};
+double tmp_gm[NT][ND][NX][NZ] = {{{{0.0}}}};
 int temp_shock_periods = 5;
 double tr_tau[ND][NT+1];
 double tr_exports[ND][NT+1];
 double tr_expart[ND][NT+1];
+double tr_mktpen[ND][NT+1];
 double tr_te[ND][NT+1];
 
 // initialize distribution
@@ -1237,8 +1180,8 @@ void init_dist(int id)
     {
       for(int iz=0; iz<NZ; iz++)
 	{
-	  dist[id][ix][iz][0] = x_ucond_probs[ix] * z_ucond_probs[iz];
-	  sum += dist[id][ix][iz][0];
+	  dist[id][ix][iz] = x_ucond_probs[ix] * z_ucond_probs[iz];
+	  sum += dist[id][ix][iz];
 	}
     }
   if(fabs(sum-1.0)>1.0e-8)
@@ -1247,195 +1190,50 @@ void init_dist(int id)
     }
 }
 
-// distribution iteration driver
-int update_dist(int id, double new_dist[NX][NZ][2], double * maxdiff, int *ixs, int *izs, int *iss)
-{
-  double exit_measure=0.0;
-  gsl_interp_accel * acc = gsl_interp_accel_alloc();
-
-  for(int ix=0; ix<NX; ix++)
-    {
-      for(int iz=0; iz<NZ; iz++)
-	{
-	  for(int is=0; is<2; is++)
-	    {
-	      new_dist[ix][iz][is]=0.0;
-	    }
-	}
-    }
-
-  for(int ix=0; ix<NX; ix++)
-    {
-      for(int iz=0; iz<NZ; iz++)
-	{
-	  gsl_interp_accel_reset(acc);
-	  double surv_prob = delta[ix];
-	  
-	  for(int is=0; is<2; is++)
-	    {
-	      exit_measure += dist[id][ix][iz][is]*(1.0-surv_prob);
-	      int igexp = gex[id][ix][iz][is];
-
-	      for(int ixp=0; ixp<NX; ixp++)
-		{
-		  for(int izp=0; izp<NZ; izp++)
-		    {
-		      new_dist[ix][izp][0] += (1.0-surv_prob)*
-			dist[id][ix][iz][is]*x_ucond_probs[ixp]*z_ucond_probs[izp];
-
-		      new_dist[ix][izp][igexp] += dist[id][ix][iz][is]*
-			surv_prob*z_trans_probs[iz][izp]*x_trans_probs[ix][ixp];
-		    }
-		}
-	    }
-	}
-    }
-
-  double sum = 0.0;
-  *maxdiff = 0.0;
-  for(int ix=0; ix<NX; ix++)
-    {
-      for(int iz=0; iz<NZ; iz++)
-	{
-	  for(int is=0; is<2; is++)
-	    {
-	      sum = sum+new_dist[ix][iz][is];
-	      if(fabs(new_dist[ix][iz][is]-dist[id][ix][iz][is])>*maxdiff)
-		{
-		  *maxdiff = fabs(new_dist[ix][iz][is]-dist[id][ix][iz][is]);
-		  *ixs=ix;
-		  *izs=iz;
-		  *iss=is;
-		}
-	    }
-	}
-    }
-
-  if(fabs(sum-1.0)>1.0e-8)
-    {
-      printf("\nUpdated distribution does not sum to one! id = %d, sum = %0.4g\n",id,sum);
-      return 1;
-    }
-
-  gsl_interp_accel_free(acc);
-  
-  return 0;
-}
-
-// distribution iteration loop
-int stat_dist(int id)
-{
-  time_t start, stop;
-  int iter=0;
-  double maxdiff=999;
-  int ixs, izs, iss;
-  int status=0;
-
-  time(&start);
-
-  init_dist(id);
-
-  do
-    {
-      iter++;
-      status = update_dist(id,tmp_dist[id],&maxdiff,&ixs,&izs,&iss);
-      memcpy(dist[id],tmp_dist[id],NX*NZ*2*sizeof(double));
-      
-      if(status)
-	{
-	  printf("Error iterating distribution! id = %d\n",id);
-	  break;
-	}
-    }
-  while(maxdiff>dist_tol && iter < max_dist_iter);
-
-  time(&stop);
-
-  if(iter==max_dist_iter)
-    {
-      status=1;
-      printf("Distribution iteration failed! id = %d, ||H1-H0|| = %0.4g, loc = (%d, %d, %d)\n",id,maxdiff,ixs,izs,iss);
-    }
-  else if(verbose==2)
-    printf("Distribution converged for id = %d, iter = %d, ||H1-H0|| = %0.4g\n",id,iter,maxdiff);
-
-  return status;
-}
-
-int stat_dist_all_dests()
-{
-  if(verbose)
-    printf("Solving stationary distribtions for all destinations...\n");
-
-  int error=0;
-  
-  time_t start, stop;
-  time(&start);
-
-#ifdef _OPENMP
-#pragma omp parallel for
-#endif
-  for(int id=0; id<ND; id++)
-    {      
-      if(policy_solved_flag[id]==0)
-	{
-	  if(stat_dist(id))
-	    error=1;
-	}
-    }
-
-  time(&stop);
-
-  if(verbose)
-    printf("Finished stationary distributions in %0.0f seconds.\n",difftime(stop,start));
-
-  return error;
-}
-
-
-void calc_tr_dyn(int id, double tr_moments[2])
+void calc_tr_dyn(int id, double tr_moments[3])
 {
   double expart_rate=0.0;
   double total_exports=0.0;
-  
+  double m = 0.0;
+  double sumw=0.0;
   for(int ix=0; ix<NX; ix++)
     {
       for(int iz=0; iz<NZ; iz++)
 	{
-	  for(int is=0; is<2; is++)
+	  if(gm[id][ix][iz] && dist[id][ix][iz]>1.0e-10)
 	    {
-	      if(gex[id][ix][iz][is] && dist[id][ix][iz][is]>1.0e-10)
-		//if(is>0 && dist[id][ix][iz][is]>1.0e-10)
-		{
-		  expart_rate += dist[id][ix][iz][is];
-		  double v = theta*theta_hat*L[id]*Y[id]*tau_hat[id]*x_hat[ix]*z_hat[iz];
-		  total_exports += dist[id][ix][iz][is] * v;
-		}
+	      m += gm[id][ix][iz] * x_hat[ix]*z_hat[iz]* dist[id][ix][iz];
+	      //m += gm[id][ix][iz] * delta[ix]*E_xhat_zhat[ix][iz]* dist[id][ix][iz];
+	      sumw += x_hat[ix]*z_hat[iz]* dist[id][ix][iz];
+	      //sumw += delta[ix]*E_xhat_zhat[ix][iz]*dist[id][ix][iz];
+
+	      expart_rate += delta[ix]*dist[id][ix][iz];
+	      double v = delta[ix]*theta*theta_hat*L[id]*Y[id]*tau_hat[id]*E_xhat_zhat[ix][iz]*gm[id][ix][iz];
+	      total_exports += dist[id][ix][iz] * v;
 	    }
 	}
     }
 
+  m=m/sumw;
   tr_moments[0] = total_exports;
   tr_moments[1] = expart_rate;
+  tr_moments[2] = m;
   
   return;
 }
 
 int tr_dyn_perm_tau_chg(int id, double chg)
 {
-  double tau_hat0 = tau_hat[id];
-
-  memcpy(tmp_dist[id],dist[id],sizeof(double)*NX*NZ*2);
-  memcpy(tmp_gex[0][id],gex[id],sizeof(int)*NX*NZ*2);
-  memcpy(tmp_V[id],V[id],sizeof(double)*NX*NZ*2);
-  
-  double tr_moments[2];
+  memcpy(tmp_gm[0][id],gm[id],sizeof(double)*NX*NZ);
+  double tau_hat0 = tau_hat[id];  
+  double tr_moments[3];
 
   // period 0: initial steady state
   calc_tr_dyn(id,tr_moments);
   tr_tau[id][0] = pow(tau_hat[id],1.0/(1.0-theta));
   tr_exports[id][0] = tr_moments[0];
   tr_expart[id][0] = tr_moments[1];
+  tr_mktpen[id][0] = tr_moments[2];
   tr_te[id][0] = 0.0;
 
   // period 1: trade cost changes after firms have made their mkt pen decisions
@@ -1444,6 +1242,7 @@ int tr_dyn_perm_tau_chg(int id, double chg)
   tr_tau[id][1] = pow(tau_hat[id],1.0/(1.0-theta));
   tr_exports[id][1] = tr_moments[0];
   tr_expart[id][1] = tr_moments[1];
+  tr_mktpen[id][1] = tr_moments[2];
   tr_te[id][1] = -log(tr_exports[id][1]/tr_exports[id][0])/log(1.0+chg);
 
   // period 2 onward: new decision rules
@@ -1456,37 +1255,16 @@ int tr_dyn_perm_tau_chg(int id, double chg)
   
   int t;
   for(t=1; t<NT; t++)
-    {
-      /*
-      double junk = 0.0;
-      int junk2,junk3,junk4;
-      if(update_dist(id, tmp_dist2[id], &junk, &junk2, &junk3, &junk4))
-	{
-	  printf("Error updating distribution!\n");
-	  return 1;
-	}
-	memcpy(dist[id],tmp_dist2[id],NX*NZ*2*sizeof(double));*/
-
+    {      
       calc_tr_dyn(id,tr_moments);
       tr_tau[id][t+1] = pow(tau_hat[id],1.0/(1.0-theta));
       tr_exports[id][t+1] = tr_moments[0];
       tr_expart[id][t+1] = tr_moments[1];
+      tr_mktpen[id][t+1] = tr_moments[2];
       tr_te[id][t+1] = -log(tr_exports[id][t+1]/tr_exports[id][0])/log(1.0+chg);
-
-      double junk = 0.0;
-      int junk2,junk3,junk4;
-      if(update_dist(id, tmp_dist2[id], &junk, &junk2, &junk3, &junk4))
-	{
-	  printf("Error updating distribution!\n");
-	  return 1;
-	}
-	memcpy(dist[id],tmp_dist2[id],NX*NZ*2*sizeof(double));
     }
 
-  // go back to benchmark trade costs, policies, and dist
-  memcpy(dist[id],tmp_dist[id],sizeof(double)*NX*NZ*2);
-  memcpy(gex[id],tmp_gex[0][id],sizeof(int)*NX*NZ*2);
-  memcpy(V[id],tmp_V[id],sizeof(double)*NX*NZ*2);
+  memcpy(gm[id],tmp_gm[0][id],sizeof(double)*NX*NZ);
   tau_hat[id] = tau_hat0;
   pi_hat[id] = theta_hat * L[id] * Y[id] * tau_hat[id];
 
@@ -1523,139 +1301,13 @@ int tr_dyn_perm_tau_chg_all_dests(double chg)
   return 0;
 }
 
-int tr_dyn_perm_tau_chg_uncertain(int id, double chg)
-{
-  double tau_hat0 = tau_hat[id];
-
-  memcpy(tmp_dist[id],dist[id],sizeof(double)*NX*NZ*2);
-  memcpy(tmp_gex[0][id],gex[id],sizeof(int)*NX*NZ*2);
-  memcpy(tmp_V[id],V[id],sizeof(double)*NX*NZ*2);
-  
-  double tr_moments[2];
-
-  // period 0: initial steady state
-  calc_tr_dyn(id,tr_moments);
-  tr_tau[id][0] = pow(tau_hat[id],1.0/(1.0-theta));
-  tr_exports[id][0] = tr_moments[0];
-  tr_expart[id][0] = tr_moments[1];
-  tr_te[id][0] = 0.0;
-
-  // period 1: trade cost changes after firms have made their mkt pen decisions
-  tau_hat[id]  = tau_hat0*pow(1.0+chg,1.0-theta);
-  calc_tr_dyn(id,tr_moments);  
-  tr_tau[id][1] = pow(tau_hat[id],1.0/(1.0-theta));
-  tr_exports[id][1] = tr_moments[0];
-  tr_expart[id][1] = tr_moments[1];
-  tr_te[id][1] = -log(tr_exports[id][1]/tr_exports[id][0])/log(1.0+chg);
-
-  // period 2 onward: new decision rules
-  // first solve new steady state policies with 100% probability of new trade costs 
-  pi_hat[id] = theta_hat * L[id] * Y[id] * tau_hat[id];
-  if(solve_policies(id))
-    {
-      printf("Error solving policy function!\n");
-      return 1;
-    }
-
-  // now copy expected continuation value (50% chance of keeping new trade costs, 50% chance of going back)
-  double maxdiff = 999;
-  int imaxdiff[3] = {0};
-  int iter=0;
-  do
-    {
-      iter++;
-
-      // copy expected continuation value (50% chance of keeping new trade costs, 50% chance of going back)
-      for(int ix=0; ix<NX; ix++)
-	{
-	  for(int iz=0; iz<NZ; iz++)
-	    {
-	      V[id][ix][iz][0] = 0.5*V[id][ix][iz][0] + 0.5*tmp_V[id][ix][iz][0];
-	      V[id][ix][iz][1] = 0.5*V[id][ix][iz][1] + 0.5*tmp_V[id][ix][iz][1];
-	    }
-	}      
-      iterate_policies(id, &maxdiff, imaxdiff);
-    }
-  while(maxdiff>policy_tol_abs && iter < policy_max_iter);
-  
-  int t;
-  for(t=1; t<NT; t++)
-    {
-      /*
-      double junk = 0.0;
-      int junk2,junk3,junk4;
-      if(update_dist(id, tmp_dist2[id], &junk, &junk2, &junk3, &junk4))
-	{
-	  printf("Error updating distribution!\n");
-	  return 1;
-	}
-	memcpy(dist[id],tmp_dist2[id],NX*NZ*2*sizeof(double));*/
-
-      calc_tr_dyn(id,tr_moments);
-      tr_tau[id][t+1] = pow(tau_hat[id],1.0/(1.0-theta));
-      tr_exports[id][t+1] = tr_moments[0];
-      tr_expart[id][t+1] = tr_moments[1];
-      tr_te[id][t+1] = -log(tr_exports[id][t+1]/tr_exports[id][0])/log(1.0+chg);
-
-      double junk = 0.0;
-      int junk2,junk3,junk4;
-      if(update_dist(id, tmp_dist2[id], &junk, &junk2, &junk3, &junk4))
-	{
-	  printf("Error updating distribution!\n");
-	  return 1;
-	}
-	memcpy(dist[id],tmp_dist2[id],NX*NZ*2*sizeof(double));
-    }
-
-  // go back to benchmark trade costs, policies, and dist
-  memcpy(dist[id],tmp_dist[id],sizeof(double)*NX*NZ*2);
-  memcpy(gex[id],tmp_gex[0][id],sizeof(int)*NX*NZ*2);
-  memcpy(V[id],tmp_V[id],sizeof(double)*NX*NZ*2);
-  tau_hat[id] = tau_hat0;
-  pi_hat[id] = theta_hat * L[id] * Y[id] * tau_hat0;
-
-  if(verbose==2)
-    printf("\tTransition dynamics complete for id=%id!\n",id);
-  
-  return 0;
-}
-
-int tr_dyn_perm_tau_chg_uncertain_all_dests(double chg)
-{
-  printf("Analyzing effects of permanent trade cost change of %0.3f with 50pct chance of reversion...\n",chg);
-
-  time_t start, stop;
-  time(&start);
-	       
-  //int error=0;
-
-#ifdef _OPENMP
-#pragma omp parallel for
-#endif
-  for(int id=0; id<ND; id++)
-    {
-      if(policy_solved_flag[id]==0)
-	{
-	  if(tr_dyn_perm_tau_chg_uncertain(id,chg))
-	    policy_solved_flag[id]=1;
-	}
-    }
-  
-  time(&stop);
-  printf("Complete! Time: %0.0f seconds.\n",difftime(stop,start));
-
-  return 0;
-}
-
 int tr_dyn_rer_shock(int id, double shock, double rho)
 {
   double tau_hat0 = tau_hat[id];
 
-  memcpy(tmp_dist[id],dist[id],sizeof(double)*NX*NZ*2);
-  memcpy(tmp_gex[0][id],gex[id],sizeof(int)*NX*NZ*2);
-  memcpy(tmp_V[id],V[id],sizeof(double)*NX*NZ*2);
+  memcpy(tmp_gm[0][id],gm[id],sizeof(double)*NX*NZ);
   
-  double tr_moments[2];
+  double tr_moments[3];
 
   // first solve policies backwards
   for(int t=NT-1; t>=1; t--)
@@ -1663,28 +1315,20 @@ int tr_dyn_rer_shock(int id, double shock, double rho)
       double rer = exp(shock*pow(rho,t));
       tau_hat[id] = tau_hat0 * pow(rer,theta-1.0);
       pi_hat[id] = theta_hat * L[id] * Y[id] * tau_hat[id];
-      if(fabs(tau_hat[id]-tau_hat0)>1.0e-5)
-	{	  
-	  double junk=0;
-	  int junk2[3];
-	  iterate_policies(id,&junk,junk2);
-	  memcpy(tmp_gex[t][id],gex[id],sizeof(int)*NX*NZ*2);
-	}
-      else
-	{
-	  memcpy(tmp_gex[t][id],tmp_gex[0][id],sizeof(int)*NX*NZ*2);
-	}
+      solve_policies(id);
+      memcpy(tmp_gm[t][id],gm[id],sizeof(double)*NX*NZ);
     }
 
   // now iterate forward
 
   // period 0: initial steady state
-  memcpy(gex[id],tmp_gex[0][id],sizeof(int)*NX*NZ*2);
+  memcpy(gm[id],tmp_gm[0][id],sizeof(double)*NX*NZ);
   tau_hat[id] = tau_hat0;
   calc_tr_dyn(id,tr_moments);
   tr_tau[id][0] = pow(tau_hat[id],1.0/(1.0-theta));
   tr_exports[id][0] = tr_moments[0];
   tr_expart[id][0] = tr_moments[1];
+  tr_mktpen[id][0] = tr_moments[2];
   tr_te[id][0] = 0.0;
 
   // period 1: trade cost changes after firms have made their mkt pen decisions
@@ -1693,23 +1337,14 @@ int tr_dyn_rer_shock(int id, double shock, double rho)
   tr_tau[id][1] = pow(tau_hat[id],1.0/(1.0-theta));
   tr_exports[id][1] = tr_moments[0];
   tr_expart[id][1] = tr_moments[1];
+  tr_mktpen[id][1] = tr_moments[2];
   tr_te[id][1] = -log(tr_exports[id][1]/tr_exports[id][0])/(-log(1.0+shock));
 
   // period 2 onward: new decision rules  
   int t;
   for(t=1; t<NT; t++)
     {
-      /*
-      memcpy(gex[id],tmp_gex[t][id],NX*NZ*2*sizeof(int));
-      double junk = 0.0;
-      int junk2,junk3,junk4;
-      if(update_dist(id, tmp_dist2[id], &junk, &junk2, &junk3, &junk4))
-	{
-	  printf("Error updating distribution!\n");
-	  return 1;
-	}
-	memcpy(dist[id],tmp_dist2[id],NX*NZ*2*sizeof(double));*/
-      
+      memcpy(gm[id],tmp_gm[t][id],NX*NZ*sizeof(double));
       double rer = exp(shock*pow(rho,t));
       tau_hat[id] = tau_hat0 * pow(rer,theta-1.0);
       pi_hat[id] = theta_hat * L[id] * Y[id] * tau_hat[id];
@@ -1717,21 +1352,12 @@ int tr_dyn_rer_shock(int id, double shock, double rho)
       tr_tau[id][t+1] = pow(tau_hat[id],1.0/(1.0-theta));
       tr_exports[id][t+1] = tr_moments[0];
       tr_expart[id][t+1] = tr_moments[1];
+      tr_mktpen[id][t+1] = tr_moments[2];
       tr_te[id][t+1] = -log(tr_exports[id][t+1]/tr_exports[id][0])/(-log(rer));
-      double junk = 0.0;
-      int junk2,junk3,junk4;
-      if(update_dist(id, tmp_dist2[id], &junk, &junk2, &junk3, &junk4))
-	{
-	  printf("Error updating distribution!\n");
-	  return 1;
-	}
-	memcpy(dist[id],tmp_dist2[id],NX*NZ*2*sizeof(double));
     }
 
   // go back to benchmark trade costs, policies, and dist
-  memcpy(dist[id],tmp_dist[id],sizeof(double)*NX*NZ*2);
-  memcpy(gex[id],tmp_gex[0][id],sizeof(int)*NX*NZ*2);
-  memcpy(V[id],tmp_V[id],sizeof(double)*NX*NZ*2);
+  memcpy(gm[id],tmp_gm[0][id],sizeof(double)*NX*NZ);
   tau_hat[id] = tau_hat0;
   pi_hat[id] = theta_hat * L[id] * Y[id] * tau_hat[id];
 
@@ -1775,16 +1401,17 @@ int write_tr_dyn_results(const char * fname)
   FILE * file = fopen(fname,"w");
   if(file)
     {
-      fprintf(file,"d,popt,gdppc,t,tau,exports,expart_rate,trade_elasticity\n");
+      fprintf(file,"d,popt,gdppc,t,tau,exports,expart_rate,mktpen_rate,trade_elasticity\n");
       for(int id=0; id<ND; id++)
 	{
 	  if(policy_solved_flag[id]==0)
 	    {
 	      for(int it=0; it<NT+1; it++)
 		{
-		  fprintf(file,"%.3s,%0.16f,%0.16f,%d,%0.16f,%0.16f,%0.16f,%0.16f\n",
+		  fprintf(file,"%.3s,%0.16f,%0.16f,%d,%0.16f,%0.16f,%0.16f,%0.16f,%0.16f\n",
 			  name[id],L[id],Y[id],it,tr_tau[id][it],
-			  tr_exports[id][it],tr_expart[id][it],tr_te[id][it]);
+			  tr_exports[id][it],tr_expart[id][it],
+			  tr_mktpen[id][it],tr_te[id][it]);
 		}
 	    }
 	}
@@ -1797,14 +1424,14 @@ int write_tr_dyn_results(const char * fname)
     }
 }
 
-/////////////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////////
 // 8. Main function and wrappers for non-calibration exercises
-/////////////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////////
 
 int setup()
 {
   printf("\nExport Market Penetration Dynamics, Joseph Steinberg, University of Toronto\n");
-  printf("Sunk cost model\n\n");
+  printf("Static market penetration model\n\n");
   
 #ifdef _OPENMP
   printf("Parallel processing with %d threads\n",omp_get_max_threads());
@@ -1828,7 +1455,7 @@ int setup()
 
 int benchmark()
 {
-  printf("Solving and simulating sunk cost model under benchmark parameterization...\n");
+  printf("Solving and simulating model...\n");
 
   time_t start, stop;
   time(&start);
@@ -1839,9 +1466,10 @@ int benchmark()
   double expart_rate=0.0;
   double exit_rate=0.0;
   double avg_nd = 0.0;
-  simul_all_dests(&expart_rate,&exit_rate,&avg_nd);
+  double avg_top5_share=0.0;
+  simul_all_dests(&expart_rate,&exit_rate,&avg_nd,&avg_top5_share);
 
-  create_panel_dataset("output/sunkcost_microdata.csv");
+  create_panel_dataset("output/static_mkt_pen_microdata.csv");
   
   time(&stop);
   printf("\nBenchmark analysis complete! Runtime = %0.0f seconds.\n",
@@ -1867,16 +1495,15 @@ int main(int argc, char * argv[])
 
   // solve stationary distributions
   linebreak();
-  if(stat_dist_all_dests())
-    return 1;
-
+  for(int id=0; id<ND; id++)
+    init_dist(id);
   
   // effects of permanent drop in trade costs
   linebreak();  
   if(tr_dyn_perm_tau_chg_all_dests(-0.1))
     return 1;
 
-  if(write_tr_dyn_results("output/tr_dyn_perm_tau_drop_sunkcost.csv"))
+  if(write_tr_dyn_results("output/tr_dyn_perm_tau_drop_static_mkt_pen.csv"))
     return 1;  
 
   // effects of temporary good depreciation
@@ -1885,7 +1512,7 @@ int main(int argc, char * argv[])
   if(tr_dyn_rer_shock_all_dests(shock,0.9))
     return 1;
 
-  if(write_tr_dyn_results("output/tr_dyn_rer_dep_sunkcost.csv"))
+  if(write_tr_dyn_results("output/tr_dyn_rer_dep_static_mkt_pen.csv"))
     return 1;
   
   // finish program

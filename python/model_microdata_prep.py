@@ -42,7 +42,11 @@ elif len(sys.argv)>1 and sys.argv[1]=='sunk':
 elif len(sys.argv)>1 and sys.argv[1]=='acr':
     fname='acr_microdata.csv'
     pref='acr'
+elif len(sys.argv)>1 and sys.argv[1]=='smp':
+    fname='static_mkt_pen_microdata.csv'
+    pref='smp'
 
+    
 print('\tLoading simulated model microdata from '+fname)
 
 dtypes={'f':str,

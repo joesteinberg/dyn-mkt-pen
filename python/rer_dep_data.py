@@ -177,3 +177,29 @@ fig.subplots_adjust(hspace=0.15,wspace=0.225)
 plt.savefig("output/bra_rer_dep2.pdf",bbox_inches='tight')
 plt.close('all')
 
+
+
+
+fig,axes=plt.subplots(2,1,figsize=(4,6.5),sharex=True,sharey=False)
+
+years=range(y0,y1+1)
+
+axes[0].plot(years,effect1[0,:],color=colors[0],label='Hard',alpha=0.75,marker='o')
+axes[0].plot(years,effect1[1,:],color=colors[1],label='Easy',alpha=0.75,marker='s')
+
+axes[1].plot(years,effect2[0,:],color=colors[0],label='Hard',alpha=0.75,marker='o')
+axes[1].plot(years,effect2[1,:],color=colors[1],label='Easy',alpha=0.75,marker='s')
+
+#axes[2].plot(years,effect3[0,:],color=colors[0],label='Hard',alpha=0.75,marker='o')
+#axes[2].plot(years,effect3[1,:],color=colors[1],label='Easy',alpha=0.75,marker='s')
+
+axes[0].set_title(r'(a) Exports')
+axes[1].set_title(r'(b) Num. firms')
+#axes[2].set_title(r"(c) Exports (1998 exporters only)")
+axes[0].set_xlim(y0,y1)
+axes[0].set_xticks(range(y0,y1+1))
+axes[0].legend(loc='best',prop={'size':6})
+fig.subplots_adjust(hspace=0.15,wspace=0.225)
+plt.savefig("output/bra_rer_dep2_tall.pdf",bbox_inches='tight')
+plt.close('all')
+

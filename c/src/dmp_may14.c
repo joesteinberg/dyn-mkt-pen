@@ -68,8 +68,7 @@
 #define NT 100 // simulation length
 #define NF 25000 // simulation population size
 #define NP 20
-//#define NY 82 //= (6+18) + (10+40) + 8
-#define NY 64 //= (3+10) + (10+40) + 1
+#define NY 82
 
 // macros: paralellization
 #ifdef _OPENMP
@@ -759,7 +758,8 @@ int init_params()
   theta = 5.0;
   theta_hat = (1.0/theta) * pow(theta/(theta-1.0),1.0-theta);
   
-  // version where we calibrate to means from sum stats and coefficients on dest. characteristics
+  // initial guesses for "exporting right away" version
+  /*
   delta0 = 34.65234;
   delta1 = 0.00309521;
   sig_x =  1.02;
@@ -776,100 +776,58 @@ int init_params()
   psi_o = 0.06338877;
   z_grid_mult_lb=3.56360171;
   z_grid_mult_ub=2.49261931;
+
   phi1 = HUGE_VAL;
   om1 = 0.0;
   chi = HUGE_VAL;
-  zeta = 0;
-
-  // version where we calibrate to scatter plot
-  sig_x     = 1.05282416;
-  rho_x     = 0.97180212;
-  sig_z     = 0.34379083;
-  rho_z     = 0.70821268;
-  z_lb      = 3.50007169;
-  z_ub      = 3.12832517;
-  psi_n     = 0.09373621;
-  alpha_n   = 0.38657541;
-  beta_n    = 1.31282159;
-  gamma_n   = 5.82227468;
-  psi_o     = 0.03750000;
-  alpha_o   = 0.97332318;
-  beta_o    = 0.61402831;
-  gamma_o   = 2.80540597;
-  delta0    = 45.78209549;
-  delta1    = 0.00633985;
-  phi1      = 22.41115053;
-  om1       = 0.02633349;
-  chi       = 24.84106349;
-  zeta      = -0.58696446;
-
+  zeta = 0.0;*/
+ 
+  
   // from scinet (all)
   double best[NP];
 
-   best[0]=1.030868617    ;
-   best[1]=0.9787937285   ;
-   best[2]=0.4749999999   ;
-   best[3]=0.6116456647   ;
-   best[4]=0.09835661977  ;
-   best[5]=0.5318245597   ;
-   best[6]=7.110766114    ;
-   best[6] = 6;
-   best[7] = 0.055;
-   best[8]=1.014598678    ;
-   best[9]=6.25           ;
-   best[10]=20             ;
-   best[11]=0.00139842196  ;
-    best[12]=1.144057975    ;
-   best[13]=0.7753645573   ;
-   best[14]=3.898813409    ;
-   best[15]=3.022510685    ;
-   best[16]=20.67841366    ;
-   best[17]=0.1328948797   ;
-   best[18]=19.53720283    ;
-   //best[19]=-0.5999999999  ;
-   best[19] = -1;
+        best[0]=1.025904686    ;
+        best[1]=0.9949999999   ;
+        best[2]=0.3750000001   ;
+        best[3]=0.6499999999   ;
+        best[4]=0.09965494991  ;
+        best[5]=0.5338223417   ;
+        best[6]=6.530948976    ;
+        best[7]=0.05976085056  ;
+        best[8]=0.9283862556   ;
+        best[9]=4.25           ;
+        best[10]=33.85337511    ;
+        best[11]=0.004933528686 ;
+        best[12]=1.016229791    ;
+        best[13]=0.8500000001   ;
+        best[14]=3.933364892    ;
+        best[15]=2.986111834    ;
+        best[16]=11.35449181    ;
+        best[17]=-0.1284755903  ;
+        best[18]=15             ;
+        best[19]=-0.1776365934  ;
 
-       best[0]=1.052334668    ;
-        best[1]=0.9605961453   ;
-        best[2]=0.3500000001   ;
-        best[3]=0.6999999999   ;
-        best[4]=0.09367848148  ;
-        best[5]=0.4256130066   ;
-        best[6]=5.795622211    ;
-        best[7]=0.0375000001   ;
-        best[8]=0.9717731014   ;
-        best[9]=2.8            ;
-        best[10]=45             ;
-        best[11]=0.004221654591 ;
-        best[12]=1.3            ;
-        best[13]=0.6075313853   ;
-        best[14]=3.33590258     ;
-        best[15]=3.089793948    ;
-        best[16]=19.92464247    ;
-        best[17]=-0.129464741   ;
-        best[18]=24.84437708    ;
-        best[19]=-0.5925471898  ;
-
-   sig_x=best[0];
-   rho_x=best[1];
-   sig_z=best[2];
-   rho_z=best[3];
-   psi_n=best[4];
-   alpha_n=best[5];
-   gamma_n=best[6];
-   psi_o=best[7];
-   alpha_o=best[8];
-   gamma_o=best[9];
-   delta0=best[10];
-   delta1=best[11];
-   beta_n=best[12];
-   beta_o=best[13];
-   z_grid_mult_lb=best[14];
-   z_grid_mult_ub=best[15];
-   phi1=best[16];
-   om1=best[17];
-   chi=best[18];
-   zeta=best[19];
+  
+  sig_x=best[0];
+  rho_x=best[1];
+  sig_z=best[2];
+  rho_z=best[3];
+  psi_n=best[4];
+  alpha_n=best[5];
+  gamma_n=best[6];
+  psi_o=best[7];
+  alpha_o=best[8];
+  gamma_o=best[9];
+  delta0=best[10];
+  delta1=best[11];
+  beta_n=best[12];
+  beta_o=best[13];
+  z_grid_mult_lb=best[14];
+  z_grid_mult_ub=best[15];
+  phi1=best[16];
+  om1=best[17];
+  chi=best[18];
+  zeta=best[19];
 
   // set all destination-specific variables to mean values... we will use the
   // array of destinations in parallelizing the calibration
@@ -2953,7 +2911,6 @@ int write_lf_dyn_results(char * fname)
 
 FILE * results_file;
 int fcnt=0;
-int all_moments=1;
 
 //int work(const double params[NP], double residuals[NY])
 int work(const double params[NP], double * error)
@@ -3000,28 +2957,28 @@ int work(const double params[NP], double * error)
     }
       
   printf("\nCandidate parameter vector %d:\n",fcnt);
-  printf("\tsig_x     = %0.8f;\n",sig_x);
-  printf("\trho_x     = %0.8f;\n",rho_x);
-  printf("\tsig_z     = %0.8f;\n",sig_z);
-  printf("\trho_z     = %0.8f;\n",rho_z);
-  printf("\tz_lb      = %0.8f;\n",z_grid_mult_lb);
-  printf("\tz_ub      = %0.8f;\n",z_grid_mult_ub);
-  printf("\tpsi_n     = %0.8f;\n",psi_n);
-  printf("\talpha_n   = %0.8f;\n",alpha_n);
-  printf("\tbeta_n    = %0.8f;\n",beta_n);
-  printf("\tgamma_n   = %0.8f;\n",gamma_n);
-  printf("\tpsi_o     = %0.8f;\n",psi_o);
-  printf("\talpha_o   = %0.8f;\n",alpha_o);
-  printf("\tbeta_o    = %0.8f;\n",beta_o);
-  printf("\tgamma_o   = %0.8f;\n",gamma_o);
-  printf("\tdelta0    = %0.8f;\n",delta0);
-  printf("\tdelta1    = %0.8f;\n",delta1);
+  printf("\tsig_x     = %0.8f\n",sig_x);
+  printf("\trho_x     = %0.8f\n",rho_x);
+  printf("\tsig_z     = %0.8f\n",sig_z);
+  printf("\trho_z     = %0.8f\n",rho_z);
+  printf("\tz_lb      = %0.8f\n",z_grid_mult_lb);
+  printf("\tz_ub      = %0.8f\n",z_grid_mult_ub);
+  printf("\tpsi_n     = %0.8f\n",psi_n);
+  printf("\talpha_n   = %0.8f\n",alpha_n);
+  printf("\tbeta_n    = %0.8f\n",beta_n);
+  printf("\tgamma_n   = %0.8f\n",gamma_n);
+  printf("\tpsi_o     = %0.8f\n",psi_o);
+  printf("\talpha_o   = %0.8f\n",alpha_o);
+  printf("\tbeta_o    = %0.8f\n",beta_o);
+  printf("\tgamma_o   = %0.8f\n",gamma_o);
+  printf("\tdelta0    = %0.8f\n",delta0);
+  printf("\tdelta1    = %0.8f\n",delta1);
   //printf("\tphi0      = %0.8f\n",phi0);
-  printf("\tphi1      = %0.8f;\n",phi1);
+  printf("\tphi1      = %0.8f\n",phi1);
   //printf("\tom0       = %0.8f\n",om0);
-  printf("\tom1       = %0.8f;\n",om1);
-  printf("\tchi       = %0.8f;\n",chi);
-  printf("\tzeta      = %0.8f;\n",zeta);
+  printf("\tom1       = %0.8f\n",om1);
+  printf("\tchi       = %0.8f\n",chi);
+  printf("\tzeta      = %0.8f\n",zeta);
   
   for(int id=0; id<ND; id++)
     {
@@ -3081,32 +3038,28 @@ int work(const double params[NP], double * error)
       double residuals[NY];
       
       int got = 0;
-      for(int i=0; i<NY-1; i++)
+      for(int i=0; i<NY-8; i++)
 	{
 	  got += fscanf(file,"%lf",&(data_moments[i]));
 	}
-      for(int i=0; i<NY-1; i++)
+      for(int i=0; i<NY-8; i++)
 	{
 	  got += fscanf(file,"%lf",&(model_moments[i]));
 	}
-      for(int i=0; i<NY-1; i++)
+      for(int i=0; i<NY-8; i++)
 	{
 	  got += fscanf(file,"%lf",&(weights[i]));
 	}
 	    
       fclose(file);
-      if(got!=3*(NY-1))
+      if(got!=3*(NY-8))
 	{
 	  printf("Failed to load calibration data! Got = %d\n",got);
 	  return 1;
 	}
       else
 	{
-	  weights[NY-1] = 0.1;
-          data_moments[NY-1] = 0.25;
-          model_moments[NY-1] = expart_multi;
-
-	  /*
+	  
 	  data_moments[NY-8] = 0.25;
 	  model_moments[NY-8] = expart_multi;
 	  
@@ -3139,32 +3092,22 @@ int work(const double params[NP], double * error)
 	  weights[NY-4] = 0.005813;
 	  weights[NY-3] = 0.004722;
 	  weights[NY-2] = 0.003073;
-	  weights[NY-1] = 0.001910;*/
+	  weights[NY-1] = 0.001910;
 
 	  *error = 0.0;
-	  double err1=0.0;
-          double err2=0.0;
 	  double sum = 0.0;
-	  int num_moments = all_moments ? NY : 13;
-          for(int i=0; i<num_moments; i++)
+	  for(int i=0; i<NY; i++)
 	    {
 	      double tmp = fabs(data_moments[i]-model_moments[i]);
-	      double w = weights[i];
-
-              if(data_moments[i]>5)
-                {
-                  tmp = fabs(log(data_moments[i])-log(model_moments[i]));
-                  w = log(weights[i]);
-                }
-
-	      if(!gsl_isnan(tmp) && !gsl_isinf(tmp))
-                {
-                  err1 += tmp*tmp/(w*w);
-                  err2 += tmp*tmp;
-                  sum += 1.0/(w*w);
-                  residuals[i] = tmp;
-                }
-
+	      //	      if(i==3 || i==4 || i==17 || i==18 || i==19)
+	      //tmp = tmp/fabs(data_moments[i]);
+	      
+	      *error += tmp*tmp/(weights[i]*weights[i]);
+	      //*error += tmp*tmp;
+	      sum += 1.0/(weights[i]*weights[i]);
+	      
+	      residuals[i] = tmp;
+	      
 	      if(results_file)
 		{
 		  fprintf(results_file,"%0.16f",tmp);
@@ -3173,37 +3116,13 @@ int work(const double params[NP], double * error)
 		}
 	    }
 
-          if(!all_moments)
-            {
-              num_moments++;
-              int i=NY-8;
-              double tmp = fabs(data_moments[i]-model_moments[i]);
-
-	      if(!gsl_isnan(tmp) && !gsl_isinf(tmp))
-                {
-                  err1 += tmp*tmp/(weights[i]*weights[i]);
-                  err2 += tmp*tmp;
-                  sum += 1.0/(weights[i]*weights[i]);
-                  residuals[i] = tmp;
-                }
-
-	      if(results_file)
-		{
-		  fprintf(results_file,"%0.16f",tmp);
-		  if(i<NY-1)
-		    fprintf(results_file,",");
-		}      
-            }	  
-
 	  if(results_file)
 	    {
 	      fprintf(results_file,"\n");
 	      fflush(results_file);
 	    }
-
-	  err2 = sqrt(err1/sum);
-          err1 = sqrt(err2/num_moments);
-          *error  = 0.75*err1 + 0.25*err2;
+	  //*error = sqrt(*error/NY);
+	  *error = sqrt(*error/sum);
 
 	  int fails=0;
 	  for(int j=0; j<ND; j++)
@@ -3219,50 +3138,80 @@ int work(const double params[NP], double * error)
 	      printf("-------------------------------------------------\n");
 	      
 	      printf("\nMoments:                               data model diff:\n\n");
-	      int cnt=0;
-	      
-	      printf("\tExport part. coeffs. on dest. chars.:\n");
-	      printf("\tLog pop.                      %+0.4f %+0.4f %0.4f\n",
+
+	      printf("\tNum. exporters (cv):           %+0.4f %+0.4f %0.4f\n",
 		     data_moments[0],model_moments[0],residuals[0]);
-	      printf("\tLog GDP.                      %+0.4f %+0.4f %0.4f\n",
+	      printf("\tTop 5 share (avg):             %+0.4f %+0.4f %0.4f\n",
 		     data_moments[1],model_moments[1],residuals[1]);
-	      printf("\tLog tau.                      %+0.4f %+0.4f %0.4f\n",
+	      //printf("\tTop 5 share (iqr):             %+0.4f %+0.4f %0.4f\n",
+	      //	     data_moments[2],model_moments[2],residuals[2]);
+	      printf("\tAvg num dest (avg):            %+0.3f %+0.3f %0.4f\n",
 		     data_moments[2],model_moments[2],residuals[2]);
-	      cnt = cnt+3;
+	      //printf("\tAvg num dest (iqr):            %+0.4f %+0.4f %0.4f\n",
+	      //	     data_moments[4],model_moments[4],residuals[4]);
+	      printf("\tExit rate (avg):               %+0.4f %+0.4f %0.4f\n",
+		     data_moments[3],model_moments[3],residuals[3]);
+	      //printf("\tExit rate (iqr):               %+0.4f %+0.4f %0.4f\n",
+	      //     data_moments[6],model_moments[6],residuals[6]);
+	      printf("\tEntrant rel size (avg):        %+0.4f %+0.4f %0.4f\n",
+		     data_moments[4],model_moments[4],residuals[4]);
+	      //printf("\tEntrant rel size (iqr):        %+0.4f %+0.4f %0.4f\n",
+	      //	     data_moments[8],model_moments[8],residuals[8]);
+	      printf("\tEntrant rel exit rate (avg):   %+0.4f %+0.4f %0.4f\n",
+		     data_moments[5],model_moments[5],residuals[5]);
+	      //printf("\tEntrant rel exit rate (iqr):   %+0.4f %+0.4f %0.4f\n",
+	      //     data_moments[10],model_moments[10],residuals[10]);
 
-	      printf("\n\tScatter plots for other facts:\n");
-	      printf("\tTop 5 share (alpha)           %+0.4f %+0.4f %0.4f\n",
-		     data_moments[cnt],model_moments[cnt],residuals[cnt]);
-	      printf("\tTop 5 share (beta)            %+0.4f %+0.4f %0.4f\n",
-		     data_moments[cnt+1],model_moments[cnt+1],residuals[cnt+1]);
-	      cnt += 2;
+	      int cnt=6;
 	      
-	      printf("\tAvg. num dests. (alpha)       %+0.4f %+0.4f %0.4f\n",
+	      printf("\tNum. exporters (beta rgdp):    %+0.4f %+0.4f %0.4f\n",
 		     data_moments[cnt],model_moments[cnt],residuals[cnt]);
-	      printf("\tAvg. num. dest. (beta)        %+0.4f %+0.4f %0.4f\n",
+	      printf("\tNum. exporters (beta pop):     %+0.4f %+0.4f %0.4f\n",
 		     data_moments[cnt+1],model_moments[cnt+1],residuals[cnt+1]);
-	      cnt += 2;
+	      printf("\tNum. exporters (beta tau):     %+0.4f %+0.4f %0.4f\n",
+		     data_moments[cnt+2],model_moments[cnt+2],residuals[cnt+2]);
+	      cnt=cnt+3;
 
-	      printf("\tExit rate (alpha)             %+0.4f %+0.4f %0.4f\n",
+	      printf("\tTop 5 share (beta rgdp):       %+0.4f %+0.4f %0.4f\n",
 		     data_moments[cnt],model_moments[cnt],residuals[cnt]);
-	      printf("\tExit rae (beta)               %+0.4f %+0.4f %0.4f\n",
+	      printf("\tTop 5 share (beta pop):        %+0.4f %+0.4f %0.4f\n",
 		     data_moments[cnt+1],model_moments[cnt+1],residuals[cnt+1]);
-	      cnt += 2;
-	      
+	      printf("\tTop 5 share (beta tau):        %+0.4f %+0.4f %0.4f\n",
+		     data_moments[cnt+2],model_moments[cnt+2],residuals[cnt+2]);
+	      cnt=cnt+3;
 
-	      printf("\tEntrant rel. size (alpha)     %+0.4f %+0.4f %0.4f\n",
+	      printf("\tAvg num dest (beta rgdp):      %+0.4f %+0.4f %0.4f\n",
 		     data_moments[cnt],model_moments[cnt],residuals[cnt]);
-	      printf("\tEntrant rel. size (beta)      %+0.4f %+0.4f %0.4f\n",
+	      printf("\tAvg num dest (beta pop):       %+0.4f %+0.4f %0.4f\n",
 		     data_moments[cnt+1],model_moments[cnt+1],residuals[cnt+1]);
-	      cnt += 2;
-	      
-	      printf("\tEntrant rel. exit (alpha)     %+0.4f %+0.4f %0.4f\n",
-		     data_moments[cnt],model_moments[cnt],residuals[cnt]);
-	      printf("\tEntrant rel. exit (beta)      %+0.4f %+0.4f %0.4f\n",
-		     data_moments[cnt+1],model_moments[cnt+1],residuals[cnt+1]);
-	      cnt += 2;
+	      printf("\tAvg num dest (beta tau):       %+0.4f %+0.4f %0.4f\n",
+		     data_moments[cnt+2],model_moments[cnt+2],residuals[cnt+2]);
+	      cnt=cnt+3;
 
-	      
+	      printf("\tExit rate (beta rgdp):         %+0.4f %+0.4f %0.4f\n",
+		     data_moments[cnt],model_moments[cnt],residuals[cnt]);
+	      printf("\tExit rate (beta pop):          %+0.4f %+0.4f %0.4f\n",
+		     data_moments[cnt+1],model_moments[cnt+1],residuals[cnt+1]);
+	      printf("\tExit rate (beta tau):          %+0.4f %+0.4f %0.4f\n",
+		     data_moments[cnt+2],model_moments[cnt+2],residuals[cnt+2]);
+	      cnt=cnt+3;
+
+	      printf("\tEntrant rel size (beta rgdp):  %+0.4f %+0.4f %0.4f\n",
+		     data_moments[cnt],model_moments[cnt],residuals[cnt]);
+	      printf("\tEntrant rel size (beta pop):   %+0.4f %+0.4f %0.4f\n",
+		     data_moments[cnt+1],model_moments[cnt+1],residuals[cnt+1]);
+	      printf("\tEntrant rel size (beta tau):   %+0.4f %+0.4f %0.4f\n",
+		     data_moments[cnt+2],model_moments[cnt+2],residuals[cnt+2]);
+	      cnt=cnt+3;
+
+	      printf("\tEntrant rel exit (beta rgdp):  %+0.4f %+0.4f %0.4f\n",
+		     data_moments[cnt],model_moments[cnt],residuals[cnt]);
+	      printf("\tEntrant rel exit (beta pop):   %+0.4f %+0.4f %0.4f\n",
+		     data_moments[cnt+1],model_moments[cnt+1],residuals[cnt+1]);
+	      printf("\tEntrant rel exit (beta tau):   %+0.4f %+0.4f %0.4f\n",
+		     data_moments[cnt+2],model_moments[cnt+2],residuals[cnt+2]);
+	      cnt=cnt+3;
+
 	      printf("\n\tEffects of tenure on survival (hard)\n");
 	      printf("\t1:                            %+0.4f %+0.4f %0.4f\n",
 		     data_moments[cnt],model_moments[cnt],residuals[cnt]);
@@ -3314,8 +3263,26 @@ int work(const double params[NP], double * error)
 	      
 	      printf("\n\tMultilateral ex. part. rate:   %0.4f %0.4f %0.4f\n",
 		     data_moments[cnt],model_moments[cnt],residuals[cnt]);
+	      printf("\tMultilateral exit rate:        %0.4f %0.4f %0.4f\n",
+		     data_moments[cnt+1],model_moments[cnt+1],residuals[cnt+1]);
+	      printf("\tMultilateral exit rate (1D):   %0.4f %0.4f %0.4f\n",
+		     data_moments[cnt+2],model_moments[cnt+2],residuals[cnt+2]);
+	      printf("\tMultilateral exit rate (2D):   %0.4f %0.4f %0.4f\n",
+		     data_moments[cnt+3],model_moments[cnt+3],residuals[cnt+3]);
+	      printf("\tMultilateral exit rate (3D):   %0.4f %0.4f %0.4f\n",
+		     data_moments[cnt+4],model_moments[cnt+4],residuals[cnt+4]);
+	      printf("\tMultilateral exit rate (4D):   %0.4f %0.4f %0.4f\n",
+		     data_moments[cnt+5],model_moments[cnt+5],residuals[cnt+5]);
+	      printf("\tMultilateral exit rate (6D):   %0.4f %0.4f %0.4f\n",
+		     data_moments[cnt+6],model_moments[cnt+6],residuals[cnt+6]);
+	      printf("\tMultilateral exit rate (10D):  %0.4f %0.4f %0.4f\n",
+		     data_moments[cnt+7],model_moments[cnt+7],residuals[cnt+7]);
 	      
 	      printf("\n\tNumber of failed destinations:       %d\n",fails);
+	      /*printf("\tMultilateral ex. part. rate:   %+0.4f %+0.4f %0.4f\n",
+		     data_moments[cnt],model_moments[cnt],residuals[cnt]);
+	      printf("\tMultilateral exit rate:        %+0.4f %+0.4f %0.4f\n",
+	      data_moments[cnt+1],model_moments[cnt+1],residuals[cnt+1]);*/
 	    }
 	  
 	  printf("\nFitness evaluation complete! Runtime = %0.0f seconds. Error = %0.8f\n",difftime(stop,start),*error);
@@ -3457,51 +3424,28 @@ int main(int argc, char * argv[])
       // chi_lose, chi_gain
       // psi_lose, psi_gain
       // om_lose, om_gain
+        
+      double lb[NP] = {0.98, 0.9,
+		       0.25, 0.25,
+		       0.075, 0.35, 5.0,
+		       0.045, 0.6, 3.0,
+		       25.0, 0.0005,
+		       0.65, 0.45,
+		       2.0,2.0,
+		       3,-0.25,
+		       3,-0.25};
 
-      /*
-    best[0]=1.052334668    ;
-        best[1]=0.9605961453   ;
-        best[2]=0.3500000001   ;
-        best[3]=0.6999999999   ;
-        best[4]=0.09367848148  ;
-        best[5]=0.4256130066   ;
-        best[6]=5.795622211    ;
-        best[7]=0.0375000001   ;
-        best[8]=0.9717731014   ;
-        best[9]=2.8            ;
-        best[10]=45             ;
-        best[11]=0.004221654591 ;
-        best[12]=1.3            ;
-        best[13]=0.6075313853   ;
-        best[14]=3.33590258     ;
-        best[15]=3.089793948    ;
-        best[16]=19.92464247    ;
-        best[17]=-0.129464741   ;
-        best[18]=24.84437708    ;
-        best[19]=-0.5925471898  ;*/
- 
+      double ub[NP] = {1.1, 0.995,
+		       0.6, 0.925,
+		       0.12, 0.65, 8.0,
+		       0.075, 0.99, 5.0,
+		       45.0, 0.01,
+		       1.15, 0.9,
+		       4.5,4.5,
+		       15,0.5,
+		       15,0.5};
       
-      double lb[NP] = {1.01, 0.94,
-		       0.15, 0.55,
-		       0.085, 0.35, 5.0,
-		       0.0375, 0.925, 2.5,
-		       15.0, 0.0001,
-		       0.9, 0.475,
-		       3.0,2.0,
-		       5,-0.75,
-		       5,-0.75};
-
-      double ub[NP] = {1.06, 0.998,
-		       0.65, 0.925,
-		       0.12, 0.65, 8,
-		       0.065, 1.05, 5,
-		       55.0, 0.01,
-		       1.6, 1.05,
-		       4,3.5,
-		       25,0.5,
-		       25,0.5};
-      
-      nlopt_opt opt = nlopt_create(NLOPT_LN_NELDERMEAD, NP);
+      nlopt_opt opt = nlopt_create(NLOPT_G_MLSL_LDS, NP);
       nlopt_set_lower_bounds(opt, lb);
       nlopt_set_upper_bounds(opt, ub);
       //nlopt_set_population(opt,(NP+1)*10);
@@ -3510,11 +3454,11 @@ int main(int argc, char * argv[])
       nlopt_set_ftol_rel(opt, 1e-2);
       nlopt_set_maxeval(opt, 3000);
 
-      /*nlopt_opt opt2 = nlopt_create(NLOPT_LN_NELDERMEAD, NP);
+      nlopt_opt opt2 = nlopt_create(NLOPT_LN_NELDERMEAD, NP);
       nlopt_set_xtol_rel(opt2, 1e-2);
       nlopt_set_ftol_rel(opt2, 1e-2);
       nlopt_set_maxeval(opt2, 100);
-      nlopt_set_local_optimizer(opt, opt2);*/
+      nlopt_set_local_optimizer(opt, opt2);
       
       
       double minf; /* `*`the` `minimum` `objective` `value,` `upon` `return`*` */
