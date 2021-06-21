@@ -165,17 +165,17 @@ altlab=''
 if len(sys.argv)>1 and sys.argv[1]=='sunk':
         pref='_sunkcost'
         altlab='Sunk cost'
-        df2_alt = pd.read_pickle('output/sunkcost_microdata_processed.pik')
+        df2_alt = pd.read_pickle(outpath + 'sunkcost_microdata_processed.pik')
 
 elif len(sys.argv)>1 and sys.argv[1]=='acr':
         pref='_acr'
         altlab='Exog. entrant dyn.'
-        df2_alt = pd.read_pickle('output/acr_microdata_processed.pik')
+        df2_alt = pd.read_pickle(outpath + 'acr_microdata_processed.pik')
 
 elif len(sys.argv)>1 and sys.argv[1]=='smp':
         pref='_smp'
         altlab='Static mkt. pen.'
-        df2_alt = pd.read_pickle('output/smp_microdata_processed.pik')
+        df2_alt = pd.read_pickle(outpath + 'smp_microdata_processed.pik')
 
 if pref!='':
     df2_alt['nf'] = df2_alt.groupby(['d','y'])['f'].transform(lambda x: x.nunique())
@@ -227,7 +227,8 @@ if pref!='':
     
 
 caldata = np.genfromtxt(outpath + "calibration_data.txt",delimiter=" ")
-assert (caldata.shape == (3,3+10)), 'Error! Calibration data file wrong size! Run sumstats first!'
+#assert (caldata.shape == (3,3+10)), 'Error! Calibration data file wrong size! Run sumstats first!'
+assert (caldata.shape == (3,4*6)), 'Error! Calibration data file wrong size! Run sumstats first!'
     
 caldata2 = np.zeros((3,10+40))
 
@@ -267,7 +268,7 @@ caldata2[1][7] = sreg_x_b.params['C(tenure)[T.3]']
 caldata2[1][8] = sreg_x_b.params['C(tenure)[T.4]']
 caldata2[1][9] = sreg_x_b.params['C(tenure)[T.5]']
 
-caldata2[2][0:10] = 10000*caldata2[2][0:10]
+caldata2[2][0:10] = 1e8
 
 #############################################################################
         
@@ -668,11 +669,13 @@ for k in range(1,max_tenure_scalar+1):
             caldata2[0][calcol] = deffect_a[k,j]
             caldata2[1][calcol] = seffect_a[k,j]
             caldata2[2][calcol] = dse_a[k,j]
-            
-            if(not(j==0 or j==k)):
-                    caldata2[2][calcol] = caldata2[2][calcol]*10000
+
+            if(j==0):
+                caldata2[2][calcol] = caldata2[2][calcol]/1
+            elif(k==max_tenure_scalar and j==k):
+                caldata2[2][calcol] = caldata2[2][calcol]/1
             else:
-                    caldata2[2][calcol] = caldata2[2][calcol]/1
+                caldata2[2][calcol] = caldata2[2][calcol]*10
 
             calcol = calcol+1
 
@@ -681,11 +684,13 @@ for k in range(1,max_tenure_scalar+1):
             caldata2[0][calcol] = deffect_b[k,j]
             caldata2[1][calcol] = seffect_b[k,j]
             caldata2[2][calcol] = dse_b[k,j]
-            
-            if(not(j==0 or j==k)):
-                    caldata2[2][calcol] = caldata2[2][calcol]*10000
+
+            if(j==0):
+                caldata2[2][calcol] = caldata2[2][calcol]/1
+            elif(k==max_tenure_scalar and j==k):
+                caldata2[2][calcol] = caldata2[2][calcol]/1
             else:
-                    caldata2[2][calcol] = caldata2[2][calcol]/2.5
+                caldata2[2][calcol] = caldata2[2][calcol]*10
 
             calcol = calcol+1
                 
@@ -723,8 +728,8 @@ for k in range(1,max_tenure_scalar+1):
         #for cap in caps:
         #        cap.set_markeredgewidth(1)
 
-axes1[0].set_ylim(0,3)
-axes1[1].set_ylim(0,3)
+axes1[0].set_ylim(-0.25,3)
+axes1[1].set_ylim(-0.25,3)
 axes1[0].legend(loc='upper left',prop={'size':6})
 axes1[0].set_xticks(range(1,max_tenure_scalar+2))
 axes1[1].set_xticks(range(1,max_tenure_scalar+2))
@@ -777,8 +782,8 @@ for k in range(1,max_tenure_scalar+1):
         #for cap in caps:
         #        cap.set_markeredgewidth(1)
 
-axes1[0].set_ylim(0,3)
-axes1[1].set_ylim(0,3)
+axes1[0].set_ylim(-0.25,3)
+axes1[1].set_ylim(-0.25,3)
 axes1[0].legend(loc='upper left',prop={'size':6})
 axes1[0].set_xticks(range(1,max_tenure_scalar+2))
 axes1[1].set_xticks(range(1,max_tenure_scalar+2))
@@ -872,8 +877,8 @@ axes1[0].set_xticks(range(1,max_tenure_scalar+2))
 axes1[1].set_xticks(range(1,max_tenure_scalar+2))
 axes1[0].set_xlabel('Years in market')
 axes1[1].set_xlabel('Years in market')
-axes1[0].set_ylim(-0.5,3)
-axes1[1].set_ylim(-0.5,3)
+axes1[0].set_ylim(-0.25,3)
+axes1[1].set_ylim(-0.25,3)
 #axes1[1].set_yticks([])
 axes1[0].set_ylabel('log exports (relative to duration = 1)')
 
@@ -960,8 +965,17 @@ if pref!='':
     axes1[1].set_xticks(range(1,max_tenure_scalar+2))
     axes1[0].set_xlabel('Years in market')
     axes1[1].set_xlabel('Years in market')
-    axes1[0].set_ylim(-0.5,3)
-    axes1[1].set_ylim(-0.5,3)
+    axes1[0].set_ylim(-0.25,3)
+    axes1[1].set_ylim(-0.25,3)
+
+    if(pref=='_smp'):
+        axes1[0].set_ylim(-0.25,3.25)
+        axes1[1].set_ylim(-0.25,3.25)
+    elif(pref=='_sunkcost'):
+        axes1[0].set_ylim(-0.75,3)
+        axes1[1].set_ylim(-0.75,3)
+
+        
     #axes1[1].set_yticks([])
     axes1[0].set_ylabel('log exports (relative to duration = 1)')
 
@@ -1060,8 +1074,16 @@ axes1[0].set_xticks(range(1,max_tenure_scalar+2))
 axes1[1].set_xticks(range(1,max_tenure_scalar+2))
 #axes1[0].set_xlabel('Years in market')
 axes1[1].set_xlabel('Years in market')
-axes1[0].set_ylim(-0.5,3)
-axes1[1].set_ylim(-0.5,3)
+axes1[0].set_ylim(-0.25,3)
+axes1[1].set_ylim(-0.25,3)
+
+if(pref=='_smp'):
+    axes1[0].set_ylim(-0.25,3.25)
+    axes1[1].set_ylim(-0.25,3.25)
+elif(pref=='_sunkcost'):
+    axes1[0].set_ylim(-0.75,3)
+    axes1[1].set_ylim(-0.75,3)
+
 #axes1[1].set_yticks([])
 axes1[0].set_ylabel('log exports (relative to duration = 1)')
 axes1[1].set_ylabel('log exports (relative to duration = 1)')

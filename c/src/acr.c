@@ -357,13 +357,17 @@ double rho_x = 0.0; // productivity persistence
 double sig_z = 0.0; // demand dispersion
 double rho_z = 0.0; // demand persistence
 double corr_z = 0.0; // correlation of productivity shock innovations across destinations
-double kappa0 = 0.0; // marketing efficiency for new customers
-double kappa1 = 0.0; // marketing efficiency for old customers
+//double kappa0 = 0.0; // marketing efficiency for new customers
+//double kappa1 = 0.0; // marketing efficiency for old customers
 double z_grid_mult_lb = 0.0;
 double z_grid_mult_ub = 0.0;
 double xi; // iceberg cost in high state
 double rho0; // transition probability from low state
 double rho1; // transition probability from high state 
+double alpha_n = 0.0;
+double alpha_o = 0.0;
+double psi_n = 0.0;
+double psi_o = 0.0;
 
 // fixed effect grid
 double x_grid[NX] = {0.0}; // grid
@@ -393,6 +397,8 @@ double La_o[ND] = {0.0}; // = L^(alpha_o)
 double Lam_o[ND] = {0.0}; // = L^(alpha_o-1)
 double tau_hat[ND] = {0.0}; // = tau^(1-theta)
 double pi_hat[ND] = {0.0}; // theta_hat*L*Y*tau_hat
+double kappa0[ND] = {0.0};
+double kappa1[ND] = {0.0};
 
 void discretize_x(int pareto)
 {
@@ -553,11 +559,12 @@ int init_params()
 {
   W = 1.0;
   Q = 0.86245704;
-  delta0 = 34.65234;
-  delta1 = 0.00309521;
   theta = 5.0;
   theta_hat = (1.0/theta) * pow(theta/(theta-1.0),1.0-theta);
-  //sig_x =  0.90124936;
+
+  // old version
+  delta0 = 34.65234;
+  delta1 = 0.00309521;
   sig_x =  1.02;
   rho_x = 0.98194358;
   sig_z = 0.43933157;
@@ -565,11 +572,16 @@ int init_params()
   z_grid_mult_lb=3.56360171;
   z_grid_mult_ub=2.49261931;
 
-  kappa0 = 6.0;
-  kappa1 = 2.5;
-  xi=1.5;
-  rho0=0.9;
-  rho1=0.9;
+  alpha_n = 0.50840453;
+  alpha_o = 0.96266760;
+  psi_n = 0.09784021;
+  psi_o = 0.06338877;
+  
+  psi_n = 0.2;    
+  psi_o = 0.045;
+  xi = 1.15;
+  rho0=0.925;
+  rho1=0.925;
   
   // set all destination-specific variables to mean values... we will use the
   // array of destinations in parallelizing the calibration
@@ -603,6 +615,18 @@ int init_params()
 	      strncpy(name[id],buffer,3);
 	      //tau_hat[id] = pow(tau[id],1.0-theta);
 	      pi_hat[id] = theta_hat * L[id] * Y[id] * tau_hat[id];
+
+	      La_n[id] = pow(L[id],alpha_n);
+	      Lam_n[id] = pow(L[id],alpha_n-1.0);
+	      La_o[id] = pow(L[id],alpha_o);
+	      Lam_o[id] = pow(L[id],alpha_o-1.0);
+
+	      //kappa0[id] = 9;
+	      //kappa1[id] = 3.25;
+
+	      kappa0[id] = La_n[id] / psi_n;
+	      kappa1[id] = La_o[id] / psi_o;
+
 	    }
 	}
 
@@ -675,7 +699,7 @@ void iterate_policies(int id, double * maxdiff, int imaxdiff[3])
 	  double pi = pi_hat[id]*x_hat[ix]*z_hat[iz];
 	  
 	  if(EV[id][ix][iz][0]<
-	     pi*pow(xi,1.0-theta) + EV[id][ix][iz][1] - kappa0)
+	     pi*pow(xi,1.0-theta) + EV[id][ix][iz][1] - kappa0[id])
 	    {
 	      gex[id][ix][iz][0] = 1;
 	    }
@@ -685,7 +709,7 @@ void iterate_policies(int id, double * maxdiff, int imaxdiff[3])
 	    }
 
 	  if(EV[id][ix][iz][0]<
-	     pi*pow(xi,1.0-theta) - kappa1 +
+	     pi*pow(xi,1.0-theta) - kappa1[id] +
 	     rho0*EV[id][ix][iz][1] + (1.0-rho0)*EV[id][ix][iz][2])
 	    {
 	      gex[id][ix][iz][1] = 1;
@@ -696,7 +720,7 @@ void iterate_policies(int id, double * maxdiff, int imaxdiff[3])
 	    }
 	  
 	  if(EV[id][ix][iz][0]<
-	     pi - kappa1 +
+	     pi - kappa1[id] +
 	     (1.0-rho1)*EV[id][ix][iz][1] + rho1*EV[id][ix][iz][2])
 	    {
 	      gex[id][ix][iz][2] = 1;
@@ -707,16 +731,16 @@ void iterate_policies(int id, double * maxdiff, int imaxdiff[3])
 	    }
 	  
 	  double tmp0 = fmax(EV[id][ix][iz][0],
-			     pi*pow(xi,1.0-theta) - kappa0 +
+			     pi*pow(xi,1.0-theta) - kappa0[id] +
 			     EV[id][ix][iz][1]);
 	  
 	  double tmp1 = fmax(EV[id][ix][iz][0],
-			     pi*pow(xi,1.0-theta) - kappa1 +
+			     pi*pow(xi,1.0-theta) - kappa1[id] +
 			     rho0*EV[id][ix][iz][1] +
 			     (1.0-rho0)*EV[id][ix][iz][2]);
 
 	  double tmp2 = fmax(EV[id][ix][iz][0],
-			     pi - kappa1 +
+			     pi - kappa1[id] +
 			     (1.0-rho1)*EV[id][ix][iz][1] +
 			     rho1*EV[id][ix][iz][2]);
 
@@ -1991,7 +2015,7 @@ int main(int argc, char * argv[])
   linebreak();	  
   if(benchmark())
       return 1;
-
+  
   // solve stationary distributions
   linebreak();
   if(stat_dist_all_dests())
@@ -2006,15 +2030,6 @@ int main(int argc, char * argv[])
   if(write_tr_dyn_results("output/tr_dyn_perm_tau_drop_acr.csv"))
     return 1;  
 
-  // effects of permanent drop in trade costs with uncertainty
-  linebreak();  
-  if(tr_dyn_perm_tau_chg_uncertain_all_dests(-0.1))
-    return 1;
-
-  if(write_tr_dyn_results("output/tr_dyn_perm_tau_drop_uncertain_acr.csv"))
-    return 1;
-
-
   // effects of temporary good depreciation
   double shock = log(1.0+(theta-1.0)/10.0)/(theta-1.0);
   linebreak();
@@ -2024,6 +2039,17 @@ int main(int argc, char * argv[])
   if(write_tr_dyn_results("output/tr_dyn_rer_dep_acr.csv"))
     return 1;
 
+  linebreak();
+  printf("\nCalling python scripts to process and analyze simulated microdata...\n");
+  
+  if(system("python3 -W ignore ../python/model_microdata_prep.py acr"))
+    return 1;
+  
+  if(system("python3 -W ignore ../python/sumstats_regs.py acr"))
+    return 1;
+
+  if(system("python3 -W ignore ../python/life_cycle.py acr"))
+  
 
   // finish program
   linebreak();  

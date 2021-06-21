@@ -332,6 +332,7 @@ double sig_z = 0.0; // demand dispersion
 double rho_z = 0.0; // demand persistence
 double corr_z = 0.0; // correlation of productivity shock innovations across destinations
 double alpha = 0.0; // returns to population size in marketing to new customers
+double alpha2 = 0.0; // returns to population size in marketing to new customers
 double gama = 0.0; // diminishing returns to scale in marketing to new customers
 double psi = 0.0; // marketing efficiency for new customers
 double z_grid_mult_lb = 0.0;
@@ -363,18 +364,20 @@ double Y[ND] = {0.0}; // aggregate consumption index
 double La[ND] = {0.0}; // = L^(alpha)
 double Lam[ND] = {0.0}; // = L^(alpha-1)
 double tau_hat[ND] = {0.0}; // = tau^(1-theta)
+double ta[ND] = {1.0}; // = L^(alpha)
+double tam[ND] = {1.0}; // = L^(alpha-1)
 double pi_hat[ND] = {0.0}; // theta_hat*L*Y*tau_hat
 
 // marketing cost for new customers
 static inline double s(int id, double n)
 {
-  return La[id] * ( 1 - pow((1.0-n),1.0-gama) ) / psi / (1.0-gama);
+  return La[id] * ta[id] * ( 1 - pow((1.0-n),1.0-gama) ) / psi / (1.0-gama);
 }
 
 // derivative of s wrt n
 static inline double ds_dn(int id, double n)
 {
-  return La[id] / psi / pow((1.0-n),gama);
+  return La[id] * ta[id] / psi / pow((1.0-n),gama);
 }
 
 void discretize_x(int pareto)
@@ -552,20 +555,27 @@ int init_params()
 {
   W = 1.0;
   Q = 0.86245704;
-  delta0 = 34.65234;
-  delta1 = 0.00309521;
   theta = 5.0;
   theta_hat = (1.0/theta) * pow(theta/(theta-1.0),1.0-theta);
+
+  delta0 = 34.65234;
+  delta1 = 0.00309521;
   sig_x =  1.02;
   rho_x = 0.98194358;
   sig_z = 0.43933157;
   rho_z =  0.60418386;
   z_grid_mult_lb=3.56360171;
   z_grid_mult_ub=2.49261931;
+  alpha = 0.50840453;
+  alpha2=0.0;
+  gama=6.43893845;
+  psi = 0.09784021;
 
-  alpha = 0.9;
-  gama = 8;
-  psi = 0.04;
+  //psi = 0.04;
+  //alpha = 0.95;
+  //gama = 15;
+  //alpha = 1.1;
+  //psi = 0.015;
   
   // set all destination-specific variables to mean values... we will use the
   // array of destinations in parallelizing the calibration
@@ -598,6 +608,8 @@ int init_params()
 	      tau_hat[id] = 1.0/tau_;
 	      La[id] = pow(L[id],alpha);
 	      Lam[id] = pow(L[id],alpha-1.0);
+	      ta[id] = pow(tau_hat[id],alpha2);
+	      tam[id] = pow(tau_hat[id],alpha2-1.0);
 	      strncpy(name[id],buffer,3);
 	      //tau_hat[id] = pow(tau[id],1.0-theta);
 	      pi_hat[id] = theta_hat * L[id] * Y[id] * tau_hat[id];
@@ -634,7 +646,7 @@ double entrant_foc(double mp, void * data)
 
   double mc = ds_dn(id,mp);
 
-  double EV=0.0;
+  //double EV=0.0;
   
   return mc - pi_hat[id]*x_hat[ix]*z_hat[iz];
   //return mc - Q*delta[ix]*pi_hat[id]*E_xhat_zhat[ix][iz];
@@ -1514,6 +1526,19 @@ int main(int argc, char * argv[])
 
   if(write_tr_dyn_results("output/tr_dyn_rer_dep_static_mkt_pen.csv"))
     return 1;
+
+  linebreak();
+  printf("\nCalling python scripts to process and analyze simulated microdata...\n");
+  
+  if(system("python3 -W ignore ../python/model_microdata_prep.py smp"))
+    return 1;
+  
+  if(system("python3 -W ignore ../python/sumstats_regs.py smp"))
+    return 1;
+
+  if(system("python3 -W ignore ../python/life_cycle.py smp"))
+    return 1;
+
   
   // finish program
   linebreak();  

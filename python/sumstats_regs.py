@@ -32,7 +32,7 @@ outpath='/home/joseph/Research/ongoing_projects/dyn_mkt_pen/v2/programs/python/o
 # column 4: exit rate avg
 # column 5: rel entrant size avg
 # column 6: rel entrant exit rate avg
-calibration_data=np.zeros((3,3+10))
+calibration_data=np.zeros((3,4*6))
 
 ##############################################################################################3
 
@@ -132,7 +132,7 @@ for v,f in zip(vars,fmt):
                 
 file.write('\\\\\nMax')
 for v,f in zip(vars,fmt):
-        file.write('& %s' % locale.format_string(f,tmp[v].max(),grouping=True))
+         file.write('& %s' % locale.format_string(f,tmp[v].max(),grouping=True))
 
 file.write('\\\\\nStd. dev.')
 for v,f in zip(vars,fmt):
@@ -193,23 +193,27 @@ file.close()
 #iqr = lambda x: np.subtract(*np.percentile(x, [75, 25]))
 
 calcol=0
-# n=len(agg_by_d2)
-# for v in vars:
-#         if(v=='nf'):
-#                 cv= agg_by_d2[v].std()/agg_by_d2[v].mean()
-#                 calibration_data[0][calcol] = cv
-#                 calibration_data[1][calcol] = agg_by_d2_s[v].std()/agg_by_d2_s[v].mean()
-#                 calibration_data[2][calcol] = cv/np.sqrt(2*n) * np.sqrt(1+2*(cv/100)*(cv/100))
-#                 calcol = calcol+1
-#         else:
-#                 calibration_data[0][calcol] = agg_by_d2[v].mean()
-#                 calibration_data[1][calcol] = agg_by_d2_s[v].mean()
-#                 calibration_data[2][calcol] = agg_by_d2[v].std()/np.sqrt(n)
-#                 calcol = calcol+1
-#                 #calibration_data[0][calcol] = iqr(agg_by_d2[v])
-#                 #calibration_data[1][calcol] = iqr(agg_by_d2_s[v])
-#                 #calcol = calcol+1
+n=len(agg_by_d2)
+for v in vars:
+        if(v=='nf'):
+                cv= agg_by_d2[v].std()/agg_by_d2[v].mean()
+                calibration_data[0][calcol] = cv
+                calibration_data[1][calcol] = agg_by_d2_s[v].std()/agg_by_d2_s[v].mean()
+                calibration_data[2][calcol] = cv/np.sqrt(2*n) * np.sqrt(1+2*(cv/100)*(cv/100))
+                calcol = calcol+1
+        else:
+                calibration_data[0][calcol] = agg_by_d2[v].mean()
+                calibration_data[1][calcol] = agg_by_d2_s[v].mean()
+                calibration_data[2][calcol] = agg_by_d2[v].std()/np.sqrt(n)
+                calcol = calcol+1
+                #calibration_data[0][calcol] = iqr(agg_by_d2[v])
+                #calibration_data[1][calcol] = iqr(agg_by_d2_s[v])
+                #calcol = calcol+1
 
+        if(v=='avg_nd' or v=='exit_rate'):
+                calibration_data[2][calcol] = calibration_data[2][calcol]/50
+        elif(v=='top5_share'):
+                calibration_data[2][calcol] = calibration_data[2][calcol]/300
 
 #############################################################################
 
@@ -422,8 +426,8 @@ file.write('\\end{table}\n')
 
 file.close()
 
-calcol=0
-for rd, rs in zip(dregs[0:1],sregs[0:1]):
+#calcol=0
+for rd, rs in zip(dregs,sregs):
         calibration_data[0][calcol] = rd.params['np.log(gdppc)']
         calibration_data[1][calcol] = rs.params['np.log(gdppc)']
         calibration_data[2][calcol] = rd.HC0_se['np.log(gdppc)']
@@ -438,8 +442,6 @@ for rd, rs in zip(dregs[0:1],sregs[0:1]):
         calibration_data[1][calcol] = rs.params['np.log(tau)']
         calibration_data[2][calcol] = rd.HC0_se['np.log(tau)']
         calcol = calcol + 1
-
-
         
 #######################################################################
 print('\tCreating scatter plots...')
@@ -480,15 +482,15 @@ for y in range(2):
             
     ax.set_title(ylabs[y],y=1.02,size=8)
     
-    calibration_data[0][calcol] = p[0]
-    calibration_data[2][calcol] = np.sqrt(np.diag(cov))[0]
+    #calibration_data[0][calcol] = p[0]
+    #calibration_data[2][calcol] = np.sqrt(np.diag(cov))[0]
 
-    calibration_data[0][calcol+1] = p[1] 
-    calibration_data[2][calcol+1] = np.sqrt(np.diag(cov))[1]
+    #calibration_data[0][calcol+1] = p[1]
+    #calibration_data[2][calcol+1] = np.sqrt(np.diag(cov))[1]
 
-    if(ycol=='exit_rate'):
-            calibration_data[2][calcol] = calibration_data[2][calcol]/1
-            calibration_data[2][calcol+1] = calibration_data[2][calcol+1]/1
+    #if(ycol=='exit_rate'):
+    #        calibration_data[2][calcol] = calibration_data[2][calcol]/1
+    #        calibration_data[2][calcol+1] = calibration_data[2][calcol+1]/10
 
     
     calcol += 2
@@ -512,11 +514,11 @@ for y in range(3):
             
     ax.set_title(ylabs[y],y=1.02,size=8)
     
-    calibration_data[0][calcol] = p[0]
-    calibration_data[2][calcol] = np.sqrt(np.diag(cov))[0]
+    #calibration_data[0][calcol] = p[0]
+    #calibration_data[2][calcol] = np.sqrt(np.diag(cov))[0]
 
-    calibration_data[0][calcol+1] = p[1] 
-    calibration_data[2][calcol+1] = np.sqrt(np.diag(cov))[1]
+    #calibration_data[0][calcol+1] = p[1] 
+    #calibration_data[2][calcol+1] = np.sqrt(np.diag(cov))[1]
 
     calcol += 2
 
@@ -554,8 +556,8 @@ for y in range(2):
             
     ax.set_title(ylabs[y],y=1.02,size=8)
 
-    calibration_data[1][calcol] = p[0]
-    calibration_data[1][calcol+1] = p[1]
+    #calibration_data[1][calcol] = p[0]
+    #calibration_data[1][calcol+1] = p[1]
 
     calcol += 2
 
@@ -574,8 +576,8 @@ for y in range(3):
     z,cov = np.polyfit(xvals,yvals,1,cov=True)
     p = np.poly1d(z)
 
-    calibration_data[1][calcol] = p[0]
-    calibration_data[1][calcol+1] = p[1]
+    #calibration_data[1][calcol] = p[0]
+    #calibration_data[1][calcol+1] = p[1]
 
     calcol += 2
     

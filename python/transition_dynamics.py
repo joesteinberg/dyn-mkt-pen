@@ -155,7 +155,7 @@ plt.savefig('output/tr_dyn_perm_tau_drop.pdf',bbox_inches='tight')
 if pref !='':
         g=G2[0]
 
-        R = [0,1]
+        R = [0,2]
         if pref=='smp':
                 R = [0,1,2]
                 

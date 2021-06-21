@@ -3023,24 +3023,14 @@ int work(const double params[NP], double * error)
 		     data_moments[0],model_moments[0],residuals[0]);
 	      printf("\tTop 5 share (avg):             %+0.4f %+0.4f %0.4f\n",
 		     data_moments[1],model_moments[1],residuals[1]);
-	      //printf("\tTop 5 share (iqr):             %+0.4f %+0.4f %0.4f\n",
-	      //	     data_moments[2],model_moments[2],residuals[2]);
 	      printf("\tAvg num dest (avg):            %+0.3f %+0.3f %0.4f\n",
 		     data_moments[2],model_moments[2],residuals[2]);
-	      //printf("\tAvg num dest (iqr):            %+0.4f %+0.4f %0.4f\n",
-	      //	     data_moments[4],model_moments[4],residuals[4]);
 	      printf("\tExit rate (avg):               %+0.4f %+0.4f %0.4f\n",
 		     data_moments[3],model_moments[3],residuals[3]);
-	      //printf("\tExit rate (iqr):               %+0.4f %+0.4f %0.4f\n",
-	      //     data_moments[6],model_moments[6],residuals[6]);
 	      printf("\tEntrant rel size (avg):        %+0.4f %+0.4f %0.4f\n",
 		     data_moments[4],model_moments[4],residuals[4]);
-	      //printf("\tEntrant rel size (iqr):        %+0.4f %+0.4f %0.4f\n",
-	      //	     data_moments[8],model_moments[8],residuals[8]);
 	      printf("\tEntrant rel exit rate (avg):   %+0.4f %+0.4f %0.4f\n",
 		     data_moments[5],model_moments[5],residuals[5]);
-	      //printf("\tEntrant rel exit rate (iqr):   %+0.4f %+0.4f %0.4f\n",
-	      //     data_moments[10],model_moments[10],residuals[10]);
 
 	      int cnt=6;
 	      
@@ -3159,10 +3149,6 @@ int work(const double params[NP], double * error)
 		     data_moments[cnt+7],model_moments[cnt+7],residuals[cnt+7]);
 	      
 	      printf("\n\tNumber of failed destinations:       %d\n",fails);
-	      /*printf("\tMultilateral ex. part. rate:   %+0.4f %+0.4f %0.4f\n",
-		     data_moments[cnt],model_moments[cnt],residuals[cnt]);
-	      printf("\tMultilateral exit rate:        %+0.4f %+0.4f %0.4f\n",
-	      data_moments[cnt+1],model_moments[cnt+1],residuals[cnt+1]);*/
 	    }
 	  
 	  printf("\nFitness evaluation complete! Runtime = %0.0f seconds. Error = %0.8f\n",difftime(stop,start),*error);
