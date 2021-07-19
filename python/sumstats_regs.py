@@ -90,6 +90,7 @@ vnames=['Num. exporters',
         'Entrant rel. exit rate']
 
 fmt=['%d'] + ['%0.2f' for x in vars[1:]]
+#fmt=['%0.2f' for x in vars]
 
 panels = ['a','b','c','d','e','f','g','h']
 
@@ -121,6 +122,7 @@ file.write('\\\\\n')
 file.write('\\midrule\n')
 
 tmp = agg_by_d2
+#tmp['nf'] = tmp.nf/tmp.nf.mean()
 file.write('\\multicolumn{%d}{l}{\\textit{(a) Data}}\\\\\n'%(len(vars)+1))
 
 file.write('Mean')
@@ -141,6 +143,7 @@ for v,f in zip(vars,fmt):
 file.write('\\\\\n')
 
 tmp = agg_by_d2_s
+#tmp['nf'] = tmp.nf/tmp.nf.mean()
 file.write('\\\\\n\\multicolumn{%d}{l}{\\textit{(b) Model}}\\\\\n'%(len(vars)+1))
         
 file.write('Mean')
@@ -162,6 +165,7 @@ file.write('\\\\\n')
 
 if pref != '':
         tmp = agg_by_d2_s_alt
+        #tmp['nf'] = tmp.nf/tmp.nf.mean()
         file.write('\\\\\n\\multicolumn{%d}{l}{\\textit{(c) %s model}}\\\\\n'%(len(vars)+1,altlab))
         
         file.write('Mean')

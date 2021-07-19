@@ -107,7 +107,7 @@ if pref!='':
 
 #############################################################################
 
-fig,axes=plt.subplots(1,3,figsize=(7,3.0),sharex=True,sharey=False)
+fig,axes=plt.subplots(1,3,figsize=(7,2.5),sharex=True,sharey=False)
 
 cols=['expart_rate_pct_chg','mktpen_rate_pct_chg','trade_elasticity']
 titles=[r'(a) Num. exporters (\% chg)',
@@ -142,11 +142,11 @@ axes[1].set_xlim(0,10)
 axes[1].set_xlabel('Years since policy change')
 axes[1].set_xticks(range(11))
 axes[1].set_xticklabels([('%d'%t if t%2==0 else '') for t in range(11)])
-#axes[2].legend(loc='lower right',prop={'size':8})
+axes[2].legend(loc='lower right',prop={'size':6})
 
 
-ann1=axes[0].annotate(xy=(55,150),xytext=(0,0),xycoords='axes points',textcoords='offset points',s=r"Avg. of hard dests.",size=6)
-ann2=axes[0].annotate(xy=(43,102),xytext=(0,0),xycoords='axes points',textcoords='offset points',s=r"Avg. of easy dests.",size=6)
+#ann1=axes[0].annotate(xy=(55,150),xytext=(0,0),xycoords='axes points',textcoords='offset points',s=r"Avg. of hard dests.",size=6)
+#ann2=axes[0].annotate(xy=(43,102),xytext=(0,0),xycoords='axes points',textcoords='offset points',s=r"Avg. of easy dests.",size=6)
 
 fig.subplots_adjust(hspace=0.2,wspace=0.25)
 plt.savefig('output/tr_dyn_perm_tau_drop.pdf',bbox_inches='tight')
@@ -184,8 +184,8 @@ if pref !='':
         #axes[0].annotate(xy=(55,150),xytext=(0,0),xycoords='axes points',textcoords='offset points',s=r"Avg. of hard dests.",size=6)
         #axes[0].annotate(xy=(43,89),xytext=(0,0),xycoords='axes points',textcoords='offset points',s=r"Avg. of easy dests.",size=6)
         
-        ann1.remove()
-        ann2.remove()
+        #ann1.remove()
+        #ann2.remove()
         axes[2].legend(loc='lower right',prop={'size':6})
         fig.subplots_adjust(hspace=0.2,wspace=0.25)
         plt.savefig('output/tr_dyn_perm_tau_drop_'+pref+'.pdf',bbox_inches='tight')
@@ -195,7 +195,7 @@ if pref !='':
 
 #############################################################################
 
-fig,axes=plt.subplots(1,3,figsize=(7,3.0),sharex=True,sharey=False)
+fig,axes=plt.subplots(1,3,figsize=(7,2.5),sharex=True,sharey=False)
 
 cols=['exports_pct_chg','expart_rate_pct_chg','mktpen_rate_pct_chg']
 titles=[r'(a) Exports (\% chg)',
@@ -241,10 +241,13 @@ axes[1].set_xlim(0,10)
 axes[1].set_xlabel('Years since policy change')
 axes[1].set_xticks(range(11))
 axes[1].set_xticklabels([('%d'%t if t%2==0 else '') for t in range(11)])
-#axes[1].legend(prop={'size':6},loc='lower right')
-ann1=axes[2].annotate(xy=(47,150),xytext=(0,0),xycoords='axes points',textcoords='offset points',s=r"Avg. of hard dests.",size=6)
-ann2=axes[2].annotate(xy=(35,35),xytext=(0,0),xycoords='axes points',textcoords='offset points',s=r"Avg. of easy dests.",size=6)
-ann3=axes[2].annotate(xy=(28,80),xytext=(0,0),xycoords='axes points',textcoords='offset points',s=r"RER (right axis)",size=6)
+
+lns=ln1+ln2+ln3
+labs = [l.get_label() for l in lns]
+axes[0].legend(lns,labs,prop={'size':6},loc='lower right')
+#ann1=axes[2].annotate(xy=(47,150),xytext=(0,0),xycoords='axes points',textcoords='offset points',s=r"Avg. of hard dests.",size=6)
+#ann2=axes[2].annotate(xy=(35,35),xytext=(0,0),xycoords='axes points',textcoords='offset points',s=r"Avg. of easy dests.",size=6)
+#ann3=axes[2].annotate(xy=(28,80),xytext=(0,0),xycoords='axes points',textcoords='offset points',s=r"RER (right axis)",size=6)
 
 fig.subplots_adjust(hspace=0.2,wspace=0.35)
 plt.savefig('output/tr_dyn_rer_dep.pdf',bbox_inches='tight')
@@ -280,9 +283,9 @@ if pref!='':
                                  label=r'Easy dests. ('+altlab+')')
 
    
-        ann1.remove()
-        ann2.remove()
-        ann3.remove()
+        #ann1.remove()
+        #ann2.remove()
+        #ann3.remove()
 
         lns = ln1+ln2+ln3+ln4+ln5
         labs = [l.get_label() for l in lns]

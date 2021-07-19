@@ -776,7 +776,7 @@ int init_params()
   alpha_o = 0.96266760;
   alpha2_n = 0.0;
   alpha2_o = 0.0;
-  beta_n = 1.1;
+  beta_n = 0.94;
   beta_o = 0.78924476;
   gamma_n = 6.43893845;
   gamma_o = 3.82324476;

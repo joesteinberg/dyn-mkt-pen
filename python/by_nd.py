@@ -186,7 +186,7 @@ f='drank ~ np.log(gdppc) + np.log(popt) + np.log(tau) + C(y)'
 dregs = [ols(formula=f,data=agg_by_d).fit(cov_type='HC0')]
 sregs = [ols(formula=f,data=agg_by_d_s).fit(cov_type='HC0')]
 
-sregs_alt = None
+sregs_alt = []
 if pref!='':
     sregs_alt = [ols(formula=f,data=agg_by_d_s_alt).fit(cov_type='HC0')]
 
@@ -217,20 +217,30 @@ file.write("\\caption{Associations between destination characteristics and avera
 file.write('\\label{tab:regs}\n')
 file.write('\\begin{tabular}{l')
 for i in range(len(vars)):
-        file.write('c')
+        file.write('cc')
+        if(pref!=''):
+            file.write('c')
 file.write('}')
 file.write('\\toprule\n')
         
 # column names
-for vname in vnames:
-        file.write('& \\multicolumn{1}{b{1.6cm}}{\\centering '+vname+'}')
+#for vname in vnames:
+#        file.write('& \\multicolumn{1}{b{1.6cm}}{\\centering '+vname+'}')
+file.write('Data & Baseline model')
+if pref!='':
+    file.write('& %s' % altlab)
+    
 file.write('\\\\\n')
 file.write('\\midrule\n')        
                 
-file.write('\\multicolumn{%d}{l}{\\textit{(a) Data}}\\\\[4pt]\n'%(len(vars)+1))
+#file.write('\\multicolumn{%d}{l}{\\textit{(a) Data}}\\\\[4pt]\n'%(len(vars)+1))
 
 file.write('log GDPpc')
 for r in dregs:
+        file.write('& %0.3f' % r.params['np.log(gdppc)'])
+for r in sregs:
+        file.write('& %0.3f' % r.params['np.log(gdppc)'])
+for r in sregs_alt:
         file.write('& %0.3f' % r.params['np.log(gdppc)'])
 file.write('\\\\\n')
 for r in dregs:
@@ -240,6 +250,10 @@ file.write('\\\\[4pt]\n')
 file.write('log population')
 for r in dregs:
         file.write('& %0.3f' % r.params['np.log(popt)'])
+for r in sregs:
+        file.write('& %0.3f' % r.params['np.log(popt)'])
+for r in sregs_alt:
+        file.write('& %0.3f' % r.params['np.log(popt)'])
 file.write('\\\\\n')
 for r in dregs:
         file.write('& $(%0.3f)%s$' % (r.HC0_se['np.log(popt)'],signf(r.pvalues['np.log(popt)'])))
@@ -247,6 +261,10 @@ file.write('\\\\[4pt]\n')
 
 file.write('log trade barrier')
 for r in dregs:
+        file.write('& %0.3f' % r.params['np.log(tau)'])
+for r in sregs:
+        file.write('& %0.3f' % r.params['np.log(tau)'])
+for r in sregs_alt:
         file.write('& %0.3f' % r.params['np.log(tau)'])
 file.write('\\\\\n')
 for r in dregs:
@@ -263,88 +281,12 @@ for r in dregs:
         file.write('& %0.2f' % r.rsquared)
 file.write('\\\\\n\\midrule\n')
 
-
-file.write('\\multicolumn{%d}{l}{\\textit{(b) Model}}\\\\[4pt]\n'%(len(vars)+1))
-
-file.write('log GDPpc')
-for r in sregs:
-        file.write('& %0.3f' % r.params['np.log(gdppc)'])
-file.write('\\\\\n')
-for r in sregs:
-        file.write('& $(%0.3f)%s$' % (r.HC0_se['np.log(gdppc)'],signf(r.pvalues['np.log(gdppc)'])))
-file.write('\\\\[4pt]\n')
-
-file.write('log population')
-for r in sregs:
-        file.write('& %0.3f' % r.params['np.log(popt)'])
-file.write('\\\\\n')
-for r in sregs:
-        file.write('& $(%0.3f)%s$' % (r.HC0_se['np.log(popt)'],signf(r.pvalues['np.log(popt)'])))
-file.write('\\\\[4pt]\n')
-
-file.write('log trade barrier')
-for r in sregs:
-        file.write('& %0.3f' % r.params['np.log(tau)'])
-file.write('\\\\\n')
-for r in sregs:
-        file.write('& $(%0.3f)%s$' % (r.HC0_se['np.log(tau)'],signf(r.pvalues['np.log(tau)'])))
-file.write('\\\\[4pt]\n')
-
-file.write('Num. observations')
-for r in sregs:
-        file.write('& %s' % "{:,d}".format(int(r.nobs)))
-file.write('\\\\\n')
-
-file.write('$R^2$')
-for r in sregs:
-        file.write('& %0.2f' % r.rsquared)
-file.write('\\\\\n')
-
-
-if pref!='':
-    file.write('\\multicolumn{%d}{l}{\\textit{(c) %s model}}\\\\[4pt]\n'%(len(vars)+1,altlab))
-
-    file.write('log GDPpc')
-    for r in sregs_alt:
-        file.write('& %0.3f' % r.params['np.log(gdppc)'])
-    file.write('\\\\\n')
-    for r in sregs_alt:
-        file.write('& $(%0.3f)%s$' % (r.HC0_se['np.log(gdppc)'],signf(r.pvalues['np.log(gdppc)'])))
-    file.write('\\\\[4pt]\n')
-
-    file.write('log population')
-    for r in sregs_alt:
-        file.write('& %0.3f' % r.params['np.log(popt)'])
-    file.write('\\\\\n')
-    for r in sregs_alt:
-        file.write('& $(%0.3f)%s$' % (r.HC0_se['np.log(popt)'],signf(r.pvalues['np.log(popt)'])))
-    file.write('\\\\[4pt]\n')
-
-    file.write('log trade barrier')
-    for r in sregs_alt:
-        file.write('& %0.3f' % r.params['np.log(tau)'])
-    file.write('\\\\\n')
-    for r in sregs_alt:
-        file.write('& $(%0.3f)%s$' % (r.HC0_se['np.log(tau)'],signf(r.pvalues['np.log(tau)'])))
-    file.write('\\\\[4pt]\n')
-
-    file.write('Num. observations')
-    for r in sregs_alt:
-        file.write('& %s' % "{:,d}".format(int(r.nobs)))
-    file.write('\\\\\n')
-
-    file.write('$R^2$')
-    for r in sregs_alt:
-        file.write('& %0.2f' % r.rsquared)
-    file.write('\\\\\n')
-
-
         
 # footer
 file.write('\\bottomrule\n')
 file.write('\\end{tabular}\n')
 file.write('\\begin{tablenotes}\n')
-file.write("\\item Source: SECEX, CEPII Gravity Database, and author's calculations. All specifications control for year fixed effects. Robust standard errors in parentheses. $\\S$, $\\ddagger$, and $\\dagger$ denote significance at the 0.1\\%, 1\\%, and 5\\% levels, respectively.")
+file.write("\\item All specifications control for year fixed effects. Robust standard errors in parentheses. $\\S$, $\\ddagger$, and $\\dagger$ denote significance at the 0.1\\%, 1\\%, and 5\\% levels, respectively.")
 file.write('\\end{tablenotes}\n')
 file.write('\\end{threeparttable}\n')
 file.write('\\end{center}\n')
