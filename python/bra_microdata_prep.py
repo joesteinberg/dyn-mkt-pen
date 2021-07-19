@@ -85,62 +85,12 @@ years = range(1996,2008)
 y0 = years[0]
 yT = years[-1]
 
-# use Rafael's correspondences to generate time-consistent product code
-path='/home/joseph/Research/datasets/secex_brazil_customs_data/'
+df = pd.read_csv('/home/joseph/Research/datasets/secex_brazil_customs_data/secex.csv',sep=',',
+                 dtype={'cnpj8':str,'ano':int,'mes':int,'pais':int,'cnae2':str,'cnae5':str,'valor':float,'ncm':str,'pais':int})
 
-ncm96toCNAE = pd.read_stata(path+'Correspondences/ncm1996cnae.dta').rename(columns={'ncm1996':'ncm96'})
-ncm02toCNAE = pd.read_stata(path+'Correspondences/ncm2002cnae.dta').rename(columns={'ncm2002':'ncm02'})
-ncm96toCNAE['cnae5'] = ncm96toCNAE.cnae5.astype(str)
-ncm96toCNAE['cnae2'] = ncm96toCNAE.cnae2.astype(str)
-ncm02toCNAE['cnae5'] = ncm02toCNAE.cnae5.astype(str)
-ncm02toCNAE['cnae2'] = ncm02toCNAE.cnae2.astype(str)
-
-corr96toAGG = pd.read_stata(path+'Correspondences/NCMCorrespondence/ConsistentCorrespondence/Data/ncm9602_final96.dta')
-corr02toAGG = pd.read_stata(path+'Correspondences/NCMCorrespondence/ConsistentCorrespondence/Data/ncm9602_final02.dta')
-
-df = None
-for y in years:
-    
-    print('\t%d'%y)
-    
-    s = str(y)[2:]
-    if y==2000:
-        s=s+'_original'
-        
-    tmp = pd.read_stata(path+'Secex_Stata/Exports/exp'+s+'.dta')
-    if 'cnpj' in tmp.columns.tolist():
-        tmp.loc[tmp.cnpj8=='','cnpj8'] = tmp.cnpj[tmp.cnpj8==''].str[0:8]
-    
-    if y<2002:
-        tmp['ncm96'] = tmp.ncm.str.strip()
-        tmp = pd.merge(left=tmp,right=corr96toAGG,how='left',on='ncm96',validate='m:1',indicator=True)
-        tmp.loc[tmp._merge=='left_only','AGG_group'] = tmp.ncm
-        tmp.drop('_merge',axis=1,inplace=True)
-        
-        tmp = pd.merge(left=tmp,right=ncm96toCNAE,how='left',on='ncm96',indicator=True)
-        tmp.loc[tmp._merge=='left_only','cnae5'] = '-1'
-        tmp.loc[tmp._merge=='left_only','cnae2'] = '-1'
-        
-    else:
-        tmp['ncm02'] = tmp.ncm.str.strip()
-        tmp = pd.merge(left=tmp,right=corr02toAGG,how='left',validate='m:1',indicator=True)
-        tmp.loc[tmp._merge=='left_only','AGG_group'] = tmp.ncm
-        tmp.drop('_merge',axis=1,inplace=True)
-        
-        tmp = pd.merge(left=tmp,right=ncm02toCNAE,how='left',on='ncm02',indicator=True)
-        tmp.loc[tmp._merge=='left_only','cnae5'] = '-1'
-        tmp.loc[tmp._merge=='left_only','cnae2'] = '-1'
-
-    tmp = tmp[['ano','mes','cnpj8','pais','valor','cnae5','cnae2','AGG_group']]
-    tmp.reset_index(drop=True,inplace=True)
-    if df is None:
-        df=tmp
-    else:
-        df=df.append(tmp)
-
-df['ano'] = df.ano.astype(int)
-df['mes'] = df.mes.astype(int)
-df['pais'] = df.pais.astype(int)
+#df['ano'] = df.ano.astype(int)
+#df['mes'] = df.mes.astype(int)
+#df['pais'] = df.pais.astype(int)
 
 df.loc[df.cnae2=='','cnae2']='-1'
 df.loc[df.cnae5=='','cnae5']='-1'
