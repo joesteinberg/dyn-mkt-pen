@@ -23,7 +23,7 @@ The python scripts used to process data, run regressions, and create the tables 
 
 `gravdata.py`: Merges data from three sources: gravity variables from CEPII Gravity database; bilateral tariff data from TRAINS; and bilateral trade data from DOT. Computes trade barriers by running a gravity regression.
 
-`bra_microdata_prep.py`: Processses the raw firm-level data from Brazil and merges on the World Bank and gravity variables. If you are starting from scratch, you must run this script before attempting to run the C program, as it produces a file with destination characteristics that the C program uses as an input.
+`bra_microdata_prep.py`: Processses the raw firm-level data from Brazil and merges on the World Bank and gravity variables. Note that you cannot run this script without access to the SECEX Brazilian data, which I cannot legally provide.
 
 ### 1.2 Scripts for processing model output ###
 
