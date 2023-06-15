@@ -35,10 +35,13 @@ Next to each file name, I have provided a brief description of what this script 
 
 `by_nd.py': Conducts all additional analyses reported in Appendix B.2. Creates **Table B.2** (tableB2_drank_regs.tex), **Table B.3** (tableB3_exit_by_nd_drank.tex), **Figure B.1** (figB1_dist_by_nd_model_vs_data.pdf), **Figure B.2** (figB2_by_nd_drank_model_vs_data.pdf), and **Figure B.3** (figB3_cost_by_nd_drank.pdf). All output is stored in [programs/python/output/by_nd](https://github.com/joesteinberg/dyn-mkt-pen/tree/main/programs/python/output/by_nd).
 
-`app_wbedd/wbedd_microdata_prep.py`: Processes World Bank Exporter Dynamics database microdata from Mexico and Peru. Intermediate datasets stored in [programs/python/wbedd/output](https://github.com/joesteinberg/dyn-mkt-pen/tree/main/programs/python/app_wbedd/output).
+### Scripts for analyzing World Bank Exporter Dynamics Database data ###
+Appendix C shows that the main empirical results also obtain in firm-level data from Mexico and Peru. This data is publicly available and can be legalluy distributed, unlike the Brazilian data usedd in the main text of the paper. The following scripts produce the results found in this appendix. These scripts are structured in much the same way as the ones listed above. Please note that all intermediate datasets and output files are stored in a single folder [programs/python/wbedd/output](https://github.com/joesteinberg/dyn-mkt-pen/tree/main/programs/python/app_wbedd/output).
 
-`app_wbedd/sumstats_regs.py`: Creates **Table C.1** (tableC1_sumstats_regs_wbedd.tex). Output stored in [programs/python/wbedd/output](https://github.com/joesteinberg/dyn-mkt-pen/tree/main/programs/python/app_wbedd/output).
+`app_wbedd/wbedd_microdata_prep.py`: Processes World Bank Exporter Dynamics database microdata from Mexico and Peru.
 
-`app_wbedd/life_cycle.py`: Creates **Figure C.1** (figC1_life_cycle_dyn_v_wbedd.pdf) and **Figure C.2** (figC2_life_cycle_dyn_x_wbedd.pdf). Output stored in [programs/python/wbedd/output](https://github.com/joesteinberg/dyn-mkt-pen/tree/main/programs/python/app_wbedd/output).
+`app_wbedd/sumstats_regs.py`: Creates **Table C.1** (tableC1_sumstats_regs_wbedd.tex).
+
+`app_wbedd/life_cycle.py`: Computes variables required to estimate equations (2)-(5) and stores in Stata format. Calls the Stata do file `app_wbedd/life_cycle_data.do` to estimate these equations using the `reghdf` command. Creates **Figure C.1** (figC1_life_cycle_dyn_v_wbedd.pdf) and **Figure C.2**.(figC2_life_cycle_dyn_x_wbedd.pdf).
 
 
