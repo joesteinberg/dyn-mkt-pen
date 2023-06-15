@@ -15,7 +15,7 @@ There are also some other files that are omitted from the repository because the
 The scripts in the [programs/python](https://github.com/joesteinberg/dyn-mkt-pen/tree/main/programs/python) folder require Python version 3 and the NumPy, Pandas, Matplotlib, Statsmodels, Patsy, os, and sys libraries. The C code in the [programs/c](https://github.com/joesteinberg/dyn-mkt-pen/tree/main/programs/c) folder requires OpenMPI, GSL, and NLOpt. I ran all programs using Ubuntu Linux 19.10 on a 56-core AMD Threadripper workstation with 192GB of RAM; it may take a very long time (or may not be feasible at all) on a computer with fewer cores or less RAM. All commands listed below assume you are working in a Linux bash terminal. Please contact me if you need help running these programs on a different operating system.
 
 ## 1. Python scripts ##
-Next to each file name, I have provided a brief description of what this script does and highlighted in bold the output files it produces. Intermediate datasets are stored in Python pickle format in the [programs/python/output/pik](https://github.com/joesteinberg/dyn-mkt-pen/tree/main/programs/python/output/pik) folder. These scripts should be run in order if one is starting from scratch, but otherwise one can generally rely on the intermediate outputs from previous scripts.
+The python scripts used to process data, run regressions, and create the tables and figures in the paper are contained the folder [programs/python](https://github.com/joesteinberg/dyn-mkt-pen/tree/main/programs/python). Next to each file name, I have provided a brief description of what this script does and highlighted in bold the output files it produces. Intermediate datasets are stored in Python pickle format in the [programs/python/output/pik](https://github.com/joesteinberg/dyn-mkt-pen/tree/main/programs/python/output/pik) folder. These scripts should be run in order if one is starting from scratch, but otherwise one can generally rely on the intermediate outputs from previous scripts.
 
 ### 1.1 Scripts for downloading and processing data ###
 
@@ -53,7 +53,7 @@ Appendix C shows that the main empirical results also obtain in firm-level data 
 `app_wbedd/life_cycle.py`: Computes variables required to estimate equations (2)-(5) and stores in Stata format. Calls the Stata do file `app_wbedd/life_cycle_data.do` to estimate these equations using the `reghdf` command. Creates **Figure C.1** (figC1_life_cycle_dyn_v_wbedd.pdf) and **Figure C.2**.(figC2_life_cycle_dyn_x_wbedd.pdf).
 
 ## 2. C program ##
-The program to solve the model is written in C. It uses OpenMP to parallelize the solution of the firm's problem and simulate microdatasets.
+The program to solve the model is written in C. It is contained in the folder [programs/c](https://github.com/joesteinberg/dyn-mkt-pen/tree/main/programs/c). It uses OpenMP to parallelize the solution of the firm's problem and simulate microdatasets.
 
 ### 2.1 Source code ###
 All source code is contained in the folder [programs/c/src](https://github.com/joesteinberg/dyn-mkt-pen/tree/main/programs/c/src).
