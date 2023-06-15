@@ -15,19 +15,25 @@ The scripts in the [programs/python](https://github.com/joesteinberg/dyn-mkt-pen
 ## Python scripts ##
 Next to each file name, I have provided a brief description of what this script does and highlighted in bold the output files it produces. Intermediate datasets are stored in Python pickle format in the [programs/python/output/pik](https://github.com/joesteinberg/dyn-mkt-pen/tree/main/programs/python/output/pik) folder. These scripts should be run in order if one is starting from scratch, but otherwise one can generally rely on the intermediate outputs from previous scripts.
 
+### Scripts for downloading and processing data ###
+
 `get_wbdata.py`: Pulls data from World Bank on GDP per capita and population for export destinations.
 
 `gravdata.py`: Merges data from three sources: gravity variables from CEPII Gravity database; bilateral tariff data from TRAINS; and bilateral trade data from DOT. Computes trade barriers by running a gravity regression.
 
 `bra_microdata_prep.py`: Processses the raw firm-level data from Brazil and merges on the World Bank and gravity variables. If you are starting from scratch, you must run this script before attempting to run the C program, as it produces a file with destination characteristics that the C program uses as an input.
 
+### Scripts for processing model output ###
+
 `model_microdata_prep.py`: Processes the simulated firm-level data from the C program. Running this script without a command-line argument will process the data from the baseline model. Running it with the optional arguments `smp`, `sunkcost`, or `acr` processes the simulated data from the alternative models (static market penetration, sunk cost, and exogenous new exporter dynmamics models, respectively).  Running it with the optional arguments `abn1`, `abn2`, `abo1`, `abo2`, or `a0` processes the simulated data from the sensitivity analyses discussed in Appendix A.2 and A.3.
 
 `model_mechanics_plots.py`: Produces **Figure 3** (fig3_policy_function_example.pdf). Output is stored in [programs/python/output/model_mech_figs](https://github.com/joesteinberg/dyn-mkt-pen/tree/main/programs/python/output/model_mech_figs).
 
-`sumstats_regs.py`: Conducts the empirical analyses in Section 2.1, some of the analysis comparing the models to data in Sections 4.3 and 4.4, and some of the sensitivity analyses in Appendices A.2 and A.3. Produces **Table 1** (table1_sumstats_regs.tex), **Table 3** (table3_model_results.tex), **Table 4** (table4_sumstats_regs_costs.tex), **Table A2** (tableA2_alpha_beta.tex), and **Table B1** (tableB1_sumstats_regs_cross_sec.tex). All output is stored in [programs/python/output/sumstats_regs](https://github.com/joesteinberg/dyn-mkt-pen/tree/main/programs/python/output/sumstats_regs).
-
 `life_cycle_prep.py`: Conducts further processing on the files created by `bra_microdata_prep.py` and `model_microdata_prep.py`. Computes variables required to estimate equations (2)-(5) and stores in Stata format. Calls the following Stata do files to estimate these equations using the `reghdf` command: `life_cycle_data.do` (estimates for Brazilian data); `life_cycle_model.do` (estimates for baseline model); and `life_cycle_alt_models.do` (for alternative models and sensitivity analyses). All output (both intermediate datasets and estimation output) is stored in the folder [programs/python/output/stata](https://github.com/joesteinberg/dyn-mkt-pen/tree/main/programs/python/output/stata).
+
+### Scripts for creating tables and figures in paper ###
+
+`sumstats_regs.py`: Conducts the empirical analyses in Section 2.1, some of the analysis comparing the models to data in Sections 4.3 and 4.4, and some of the sensitivity analyses in Appendices A.2 and A.3. Produces **Table 1** (table1_sumstats_regs.tex), **Table 3** (table3_model_results.tex), **Table 4** (table4_sumstats_regs_costs.tex), **Table A2** (tableA2_alpha_beta.tex), and **Table B1** (tableB1_sumstats_regs_cross_sec.tex). All output is stored in [programs/python/output/sumstats_regs](https://github.com/joesteinberg/dyn-mkt-pen/tree/main/programs/python/output/sumstats_regs).
 
 `life_cycle_figs.py`: Loads intermediate output from previous script and creates **Table A.1** (tableA1_life_cycle_dyn_v_data_tests.tex), **Figure 1** (fig1_life_cycle_dyn_v_data.pdf), **Figure 2** (fig2_life_cycle_dyn_x_data.pdf), **Figure 4** (fig4_life_cycle_dyn_v_model.pdf), **Figure 5** (fig5_life_cycle_dyn_x_model.pdf), **Figure 6** (fig6_life_cycle_dyn_c_model.pdf), **Figure A.1** (figA1_life_cycle_dyn_v_alpha_beta.pdf), and **Figure A.2** (figA2_life_cycle_dyn_x_alpha_beta). All output is stored in [programs/python/output/life_cycle_figs](https://github.com/joesteinberg/dyn-mkt-pen/tree/main/programs/python/output/life_cycle_figs).
 
