@@ -1,5 +1,5 @@
 # Export Market Penetration Dynamics: Replication Package
-Joseph Steinberg, University of Toronto
+**Joseph Steinberg, University of Toronto**
 
 This repository contains the code required to reproduce the results in my paper "Export Market Penetration Dynamics" (currently R&R at the *Journal of International Economics*). It contains two folders at the top level: [data](https://github.com/joesteinberg/dyn-mkt-pen/tree/main/data) and [programs](https://github.com/joesteinberg/dyn-mkt-pen/tree/main/programs). The former contains the data required to replicate the empirical analysis (with some caveats, see the note below). The latter, which contains all of the programs that conduct the empirical and quantitative analyses, is split into two subfolders[programs/python](https://github.com/joesteinberg/dyn-mkt-pen/tree/main/programs/python) and [programs/c](https://github.com/joesteinberg/dyn-mkt-pen/tree/main/programs/c). The former contains all of the Python scripts required to replicate the empirical analysis in Section 2 of the paper, as well as the scripts that process the simulated model results to produce the tables and figures in Sections 4 and 5. The latter contains the code to simulate the calibrated model, which is written in C.
 
@@ -34,5 +34,11 @@ Next to each file name, I have provided a brief description of what this script 
 `transition_dynamics.py`: Loads aggregated transition dynamics files created by C program and creates **Figure 7** (fig7_tr_dyn_perm_tau_drop.pdf). Output is stored in [programs/python/output/transitions](https://github.com/joesteinberg/dyn-mkt-pen/tree/main/programs/python/output/transitions).
 
 `by_nd.py': Conducts all additional analyses reported in Appendix B.2. Creates **Table B.2** (tableB2_drank_regs.tex), **Table B.3** (tableB3_exit_by_nd_drank.tex), **Figure B.1** (figB1_dist_by_nd_model_vs_data.pdf), **Figure B.2** (figB2_by_nd_drank_model_vs_data.pdf), and **Figure B.3** (figB3_cost_by_nd_drank.pdf). All output is stored in [programs/python/output/by_nd](https://github.com/joesteinberg/dyn-mkt-pen/tree/main/programs/python/output/by_nd).
+
+`app_wbedd/wbedd_microdata_prep.py`: Processes World Bank Exporter Dynamics database microdata from Mexico and Peru. Intermediate datasets stored in [programs/python/wbedd/output](https://github.com/joesteinberg/dyn-mkt-pen/tree/main/programs/python/app_wbedd/output).
+
+`app_wbedd/sumstats_regs.py`: Creates **Table C.1** (tableC1_sumstats_regs_wbedd.tex). Output stored in [programs/python/wbedd/output](https://github.com/joesteinberg/dyn-mkt-pen/tree/main/programs/python/app_wbedd/output).
+
+`app_wbedd/life_cycle.py`: Creates **Figure C.1** (figC1_life_cycle_dyn_v_wbedd.pdf) and **Figure C.2** (figC2_life_cycle_dyn_x_wbedd.pdf). Output stored in [programs/python/wbedd/output](https://github.com/joesteinberg/dyn-mkt-pen/tree/main/programs/python/app_wbedd/output).
 
 
