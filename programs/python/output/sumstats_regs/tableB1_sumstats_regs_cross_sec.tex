@@ -1,0 +1,44 @@
+\begin{table}[h!]
+\footnotesize
+\renewcommand{\arraystretch}{1.2}
+\begin{center}
+\caption{Percentiles of normalized exports across markets}
+\label{app:tab:sumstats_regs_cross_sec}
+\begin{tabular}{lccccccccc}\toprule
+&\multicolumn{3}{c}{All firms}&\multicolumn{3}{c}{Incumbents}&\multicolumn{3}{c}{Entrants}\\
+\cmidrule(rl){2-4}\cmidrule(rl){5-7}\cmidrule(rl){8-10}
+Statistic/coefficient& \makecell{25th}& \makecell{75th}& \makecell{95th}& \makecell{25th}& \makecell{75th}& \makecell{95th}& \makecell{25th}& \makecell{75th}& \makecell{95th}\\
+\midrule
+\multicolumn{10}{l}{\textit{(a) Summary statistics (data)}}\\[4pt]
+Mean& 0.061& 0.619& 3.558& 0.072& 0.698& 3.621& 0.104& 0.735& 3.297\\
+Min& 0.004& 0.160& 2.435& 0.006& 0.203& 2.182& 0.017& 0.284& 2.178\\
+Max& 0.241& 1.290& 4.857& 0.304& 1.291& 4.914& 0.354& 1.316& 4.681\\
+Std. dev.& 0.061& 0.297& 0.581& 0.071& 0.283& 0.525& 0.084& 0.307& 0.478\\
+\midrule\multicolumn{10}{l}{\textit{(b) Associations with market characteristics (data)}}\\[4pt]
+log GDPpc& -0.337& -0.215& -0.030& -0.319& -0.179& -0.023& -0.193& -0.154& -0.027\\
+& $(0.047)^\S$& $(0.031)^\S$& $(0.015)^\dagger$& $(0.046)^\S$& $(0.029)^\S$& $(0.013)^*$& $(0.048)^\S$& $(0.031)^\S$& $(0.016)^*$\\[4pt]
+log population& -0.439& -0.164& -0.001& -0.403& -0.134& 0.022& -0.356& -0.144& 0.005\\
+& $(0.038)^\S$& $(0.025)^\S$& $(0.011)$& $(0.037)^\S$& $(0.024)^\S$& $(0.011)^\dagger$& $(0.034)^\S$& $(0.026)^\S$& $(0.012)$\\[4pt]
+log trade barrier& 0.487& 0.221& 0.010& 0.452& 0.178& -0.002& 0.323& 0.192& 0.031\\
+& $(0.050)^\S$& $(0.033)^\S$& $(0.016)$& $(0.048)^\S$& $(0.032)^\S$& $(0.016)$& $(0.055)^\S$& $(0.034)^\S$& $(0.016)^*$\\[4pt]
+Num. observations& 627& 627& 627& 627& 627& 627& 627& 627& 627\\
+$R^2$& 0.64& 0.44& 0.05& 0.59& 0.35& 0.05& 0.44& 0.26& 0.05\\
+\midrule
+\multicolumn{10}{l}{\textit{(c) Summary statistics (baseline model)}}\\[4pt]
+Mean& 0.031& 0.604& 4.276& 0.026& 0.671& 4.518& 0.078& 0.788& 3.831\\
+Min& 0.007& 0.287& 3.448& 0.003& 0.351& 2.790& 0.041& 0.481& 3.082\\
+Max& 0.112& 1.171& 5.051& 0.173& 1.423& 5.608& 0.131& 1.156& 4.262\\
+Std. dev.& 0.022& 0.216& 0.374& 0.029& 0.241& 0.516& 0.020& 0.158& 0.256\\
+\midrule\multicolumn{10}{l}{\textit{(d) Associations with market characteristics (baseline model)}}\\[4pt]
+log GDPpc& -0.349& -0.235& -0.049& -0.265& -0.200& -0.018& -0.139& -0.131& -0.039\\
+log population& 0.123& -0.058& -0.025& 0.351& 0.007& -0.026& -0.081& -0.061& -0.010\\
+log trade barrier& 0.327& 0.234& 0.051& 0.228& 0.199& 0.015& 0.134& 0.130& 0.046\\
+\bottomrule
+\end{tabular}
+\vspace{-0.1cm}
+\begin{fignote2}{1.03\textwidth}
+\textit{Notes:} Panel (a) reports summary statistics. Panel (b) reports associations with destination characteristics. All specifications include year fixed effects. Standard errors are clustered at the market level. $\S$, $\ddagger$, and $\dagger$ denote significance at the 0.1\%, 1\%, and 5\% levels, respectively. The first three columns show results for the 25th, 75th, and 95th percentiles of the export distribution for all firms, normalized by the average export volume. The second three columns show results for incumbent exporters, and the last three columns show results for new entrants.
+\end{fignote2}
+\end{center}
+\normalsize
+\end{table}
