@@ -5,13 +5,13 @@ This repository contains the code required to reproduce the results in my paper 
 
 ## 0. Notes and requirements ##
 
-### 0.0 Note about the Brazilian microdata ###
+### 0.1 Note about the Brazilian microdata ###
 The main data from Brazil used in this paper cannot legally be distributed, so the raw data files are not included in this repository. I have, however, included all of the key intermediate datasets required to reproduce the empirical results in Section 2. The processed firm-level data are in the file `bra_microdata_processed.pik` in the [programs/scripts/output/pik](https://github.com/joesteinberg/dyn-mkt-pen/tree/main/programs/python/output/pik) folder, and the files `bra_microdata_agg_by_d.pik` and `bra_microdata_agg_by_d2.pik` in the same folder contain data aggregated to the destination-year and destination levels (respectively). Starting with these files, one can reproduce all empirical results in Section 2 without the underlying raw data.
 
-### 0.1. Note about other large files ###
+### 0.2. Note about other large files ###
 There are also some other files that are omitted from the repository because they are too large to store here on Github. For example, the raw data from the World Bank Exporter Dynamics database used in Appendix C and the raw model simulation output. Any folder in this repository with omitted files contains a text file called `missing files.txt` listing them. I am happy to produce these files on request via SFTP or SCP. Please note that whenever possible, intermediate files are contained here so that this is in general not necessary.
 
-### 0.2. Requirements ###
+### 0.3. Requirements ###
 The scripts in the [programs/python](https://github.com/joesteinberg/dyn-mkt-pen/tree/main/programs/python) folder require Python version 3 and the NumPy, Pandas, Matplotlib, Statsmodels, Patsy, os, and sys libraries. The C code in the [programs/c](https://github.com/joesteinberg/dyn-mkt-pen/tree/main/programs/c) folder requires OpenMPI, GSL, and NLOpt. I ran all programs using Ubuntu Linux 19.10 on a 56-core AMD Threadripper workstation with 192GB of RAM; it may take a very long time (or may not be feasible at all) on a computer with fewer cores or less RAM. All commands listed below assume you are working in a Linux bash terminal. Please contact me if you need help running these programs on a different operating system.
 
 ## 1. Python scripts ##
@@ -52,10 +52,10 @@ Appendix C shows that the main empirical results also obtain in firm-level data 
 
 `app_wbedd/life_cycle.py`: Computes variables required to estimate equations (2)-(5) and stores in Stata format. Calls the Stata do file `app_wbedd/life_cycle_data.do` to estimate these equations using the `reghdf` command. Creates **Figure C.1** (figC1_life_cycle_dyn_v_wbedd.pdf) and **Figure C.2**.(figC2_life_cycle_dyn_x_wbedd.pdf).
 
-## C program ##
+## 2. C program ##
 The program to solve the model is written in C. It uses OpenMP to parallelize the solution of the firm's problem and simulate microdatasets.
 
-### Source code ###
+### 2.1 Source code ###
 All source code is contained in the folder [programs/c/src](https://github.com/joesteinberg/dyn-mkt-pen/tree/main/programs/c/src).
 
 `dyn_mkt_pen.c`: Source code for baseline model and sensitivity analyses.
@@ -66,9 +66,9 @@ All source code is contained in the folder [programs/c/src](https://github.com/j
 
 `acr.c`: Source code for exogenous new expoerter dynamics alternative model.
 
-### Compiling and running the program ###
+### 2.2 Compiling and running the program ###
 The source code is compiled by running `make` from the command line in the [programs/c](https://github.com/joesteinberg/dyn-mkt-pen/tree/main/programs/c) folder. To compile the baseline model, type `make dyn_mkt_pen` (or just `make`). To compile the alternative models, type `make static_mkt_pen`, `make sunk_cost`, or `make acr` respectively.  To run the models type `./bin/dyn_mkt_pen`, `./bin/static_mkt_pen`, `./bin/sunk_cost`, or `./bin/acr`. The baseline model program `./bin/dyn_mkt_pen` has several command line options that allow the user to perform sensitivity analyses as well as the results for the baseline calibration. 
 
-### Output files ###
+### 2.3 Output files ###
 The output of the programs is contained in the folder [programs/c/output](https://github.com/joesteinberg/dyn-mkt-pen/tree/main/programs/c/output). The simulated microdata data are stored in files named `<x>_microdata.csv`, where `<x>` is the name of the model. The aggregated transition dynamics are stored in files named `tr_dyn_perm_tau_drop_<x>.csv` where again `<x>` denotes the name of the model.
 
