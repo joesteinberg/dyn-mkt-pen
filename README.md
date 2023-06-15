@@ -1,7 +1,7 @@
 # Export Market Penetration Dynamics: Replication Package
 **Joseph Steinberg, University of Toronto**
 
-This repository contains the code required to reproduce the results in my paper "Export Market Penetration Dynamics" (currently R&R at the *Journal of International Economics*). It contains two folders at the top level: [data](https://github.com/joesteinberg/dyn-mkt-pen/tree/main/data) and [programs](https://github.com/joesteinberg/dyn-mkt-pen/tree/main/programs). The former contains the data required to replicate the empirical analysis (with some caveats, see the note below). The latter, which contains all of the programs that conduct the empirical and quantitative analyses, is split into two subfolders[programs/python](https://github.com/joesteinberg/dyn-mkt-pen/tree/main/programs/python) and [programs/c](https://github.com/joesteinberg/dyn-mkt-pen/tree/main/programs/c). The former contains all of the Python scripts required to replicate the empirical analysis in Section 2 of the paper, as well as the scripts that process the simulated model results to produce the tables and figures in Sections 4 and 5. The latter contains the code to simulate the calibrated model, which is written in C.
+This repository contains the code required to reproduce the results in my paper "Export Market Penetration Dynamics" (currently R&R at the *Journal of International Economics*).
 
 ## 0. Notes and requirements ##
 
