@@ -16,6 +16,9 @@ The scripts in the [programs/python](https://github.com/joesteinberg/dyn-mkt-pen
 Next to each file name, I have provided a brief description of what this script does and highlighted in bold the output files it produces. These scripts should be run in order if one is starting from scratch, but otherwise one can generally rely on the intermediate outputs from previous scripts.
 
 `get_wbdata.py`: Pulls data from World Bank on GDP per capita and population for export destinations.
+
 `gravdata.py`: Merges data from three sources: gravity variables from CEPII Gravity database; bilateral tariff data from TRAINS; and bilateral trade data from DOT. Computes trade barriers by running a gravity regression.
+
 `bra_microdata_prep.py`: Processses the raw firm-level data from Brazil and merges on the World Bank and gravity variables. If you are starting from scratch, you must run this script before attempting to run the C program, as it produces a file with destination characteristics that the C program uses as an input.
-`model_microdata.
+
+`model_microdata_prep.py`: Processes the simulated firm-level data from the C program. Running this script without a command-line argument will process the data from the baseline model. Running it with the optional arguments `smp`, `sunkcost`, or `acr` processes the simulated data from the alternative models (static market penetration, sunk cost, and exogenous new exporter dynmamics models, respectively).  Running it with the optional arguments `abn1`, `abn2`, `abo1`, `abo2`, or `a0` processes the simulated data from the sensitivity analyses discussed in Appendix A.2 and A.3.
