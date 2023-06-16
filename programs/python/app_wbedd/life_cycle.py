@@ -135,8 +135,8 @@ df = pd.read_pickle(outpath + 'wbedd_microdata_processed.pik')
 
 df['nf'] = df.groupby(['c','d','y'])['f'].transform(lambda x: x.nunique())
 tmp2 = df.groupby(['c','d'])['nf'].mean().reset_index()
-lo = tmp2.groupby('c')['nf'].agg(lambda x: x.quantile(0.75)).reset_index().rename(columns={'nf':'lo'})
-hi = tmp2.groupby('c')['nf'].agg(lambda x: x.quantile(0.9)).reset_index().rename(columns={'nf':'hi'})
+lo = tmp2.groupby('c')['nf'].agg(lambda x: x.quantile(0.5)).reset_index().rename(columns={'nf':'lo'})
+hi = tmp2.groupby('c')['nf'].agg(lambda x: x.quantile(0.5)).reset_index().rename(columns={'nf':'hi'})
 df = pd.merge(left=df,right=lo,how='left',on='c')
 df = pd.merge(left=df,right=hi,how='left',on='c')
 
