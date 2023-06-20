@@ -29,7 +29,7 @@ df = pd.merge(left=df,right=tmp1,on='d')
 p50 = tmp1.avg_nf.quantile(0.5)
 df['grp'] = np.nan
 df.loc[df.avg_nf<p50,'grp']=0
-df.loc[df.avg_nf>p50,'grp']=1
+df.loc[df.avg_nf>p90,'grp']=1
 df=df[df.tenure.notnull()].reset_index(drop=True)
 df.loc[df.tenure>max_tenure_scalar,'tenure']=max_tenure_scalar
 df.loc[df.max_tenure>max_tenure_scalar,'max_tenure']=max_tenure_scalar
@@ -45,7 +45,7 @@ df2 = pd.merge(left=df2,right=tmp2,on='d')
 p50 = tmp2.avg_nf.quantile(0.5)
 df2['grp'] = np.nan
 df2.loc[df2.avg_nf<p50,'grp']=0
-df2.loc[df2.avg_nf>p50,'grp']=1
+df2.loc[df2.avg_nf>p90,'grp']=1
 df2=df2[df2.tenure.notnull()].reset_index(drop=True)
 df2.loc[df2.tenure>max_tenure_scalar,'tenure']=max_tenure_scalar
 df2.loc[df2.max_tenure>max_tenure_scalar,'max_tenure']=max_tenure_scalar
@@ -63,7 +63,7 @@ if(alt_models==True):
         p50 = tmp2.avg_nf.quantile(0.5)            
         tmp['grp'] = np.nan
         tmp.loc[tmp.avg_nf<p50,'grp']=0
-        tmp.loc[tmp.avg_nf>p50,'grp']=1
+        tmp.loc[tmp.avg_nf>p90,'grp']=1
         tmp=tmp[tmp.tenure.notnull()].reset_index(drop=True)
         tmp.loc[tmp.tenure>max_tenure_scalar,'tenure']=max_tenure_scalar
         tmp.loc[tmp.max_tenure>max_tenure_scalar,'max_tenure']=max_tenure_scalar
