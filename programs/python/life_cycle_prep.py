@@ -27,6 +27,7 @@ df['nf'] = df.groupby(['d','y'])['f'].transform(lambda x: x.nunique())
 tmp1 = df.groupby('d')['nf'].mean().reset_index().rename(columns={'nf':'avg_nf'})
 df = pd.merge(left=df,right=tmp1,on='d')
 p50 = tmp1.avg_nf.quantile(0.5)
+p90 = tmp1.avg_nf.quantile(0.9)
 df['grp'] = np.nan
 df.loc[df.avg_nf<p50,'grp']=0
 df.loc[df.avg_nf>p90,'grp']=1
@@ -43,6 +44,7 @@ df2['nf'] = df2.groupby(['d','y'])['f'].transform(lambda x: x.nunique())
 tmp2 = df2.groupby('d')['nf'].mean().reset_index().rename(columns={'nf':'avg_nf'})
 df2 = pd.merge(left=df2,right=tmp2,on='d')
 p50 = tmp2.avg_nf.quantile(0.5)
+p90 = tmp1.avg_nf.quantile(0.9)
 df2['grp'] = np.nan
 df2.loc[df2.avg_nf<p50,'grp']=0
 df2.loc[df2.avg_nf>p90,'grp']=1
@@ -60,7 +62,8 @@ if(alt_models==True):
         tmp['nf'] = tmp.groupby(['d','y'])['f'].transform(lambda x: x.nunique())
         tmp2 = tmp.groupby('d')['nf'].mean().reset_index().rename(columns={'nf':'avg_nf'})
         tmp = pd.merge(left=tmp,right=tmp2,on='d')
-        p50 = tmp2.avg_nf.quantile(0.5)            
+        p50 = tmp2.avg_nf.quantile(0.5)
+        p90 = tmp1.avg_nf.quantile(0.9)
         tmp['grp'] = np.nan
         tmp.loc[tmp.avg_nf<p50,'grp']=0
         tmp.loc[tmp.avg_nf>p90,'grp']=1
