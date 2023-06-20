@@ -48,7 +48,7 @@ def load_tr_dyn(fname,calc_grps):
                 p90 = tmp['expart_rate'].quantile(0.9)
                 p50 = tmp['expart_rate'].quantile(0.5)
                 tmp['grp'] = np.nan
-                tmp.loc[tmp.expart_rate<=p50,'grp']=0
+                tmp.loc[tmp.expart_rate<p50,'grp']=0
                 tmp.loc[tmp.expart_rate>p90,'grp']=1
                 grps=tmp
                 
