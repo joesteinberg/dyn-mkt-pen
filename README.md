@@ -1,7 +1,7 @@
 # Export Market Penetration Dynamics: Replication Package
 **Joseph Steinberg, University of Toronto**
 
-This repository contains the code required to reproduce the results in my paper "Export Market Penetration Dynamics" (currently R&R at the *Journal of International Economics*).
+This repository contains the code required to reproduce the results in my paper "Export Market Penetration Dynamics" in the *Journal of International Economics*.
 
 ## 0. Notes and requirements ##
 
