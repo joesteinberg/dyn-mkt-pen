@@ -1,7 +1,7 @@
 # Export Market Penetration Dynamics: Replication Package
 **Joseph Steinberg, University of Toronto**
 
-This repository contains the code required to reproduce the results in my paper "Export Market Penetration Dynamics" in the *Journal of International Economics*. This readme uses Github-style markdown and is best viewed on directly on Github at https://github.com/joesteinberg/dyn-mkt-pen/edit/main/README.md.
+This repository contains the code required to reproduce the results in my paper "Export Market Penetration Dynamics" in the *Journal of International Economics*.
 
 ## 0. Notes and requirements ##
 
